@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>test</title>
+    <url>/2022/03/03/test/</url>
+    <content><![CDATA[<p>​                                                              一次测试数据</p>
+<p>阿松大</p>
+<img data-src="/2022/03/03/test/image-20220303212122891.png" class title="image-20220303212122891">
+]]></content>
+      <categories>
+        <category>test</category>
+      </categories>
+      <tags>
+        <tag>test</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2022/03/01/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
@@ -18,5 +32,30 @@
 
 <p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
+  </entry>
+  <entry>
+    <title>测试</title>
+    <url>/2022/03/03/%E6%B5%8B%E8%AF%95-1/</url>
+    <content><![CDATA[<p>一次测试</p>
+<img data-src="/2022/03/03/%E6%B5%8B%E8%AF%95-1/image-20220303230634466.png" class title="image-20220303230634466">
+]]></content>
+      <categories>
+        <category>2</category>
+      </categories>
+      <tags>
+        <tag>2</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>测试</title>
+    <url>/2022/03/03/%E6%B5%8B%E8%AF%95/</url>
+    <content><![CDATA[<h1 id="a"><a href="#a" class="headerlink" title="a"></a>a</h1><p>test</p>
+]]></content>
+      <categories>
+        <category>1</category>
+      </categories>
+      <tags>
+        <tag>1</tag>
+      </tags>
   </entry>
 </search>
