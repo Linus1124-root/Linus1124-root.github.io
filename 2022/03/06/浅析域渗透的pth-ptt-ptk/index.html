@@ -87,7 +87,7 @@
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/06/%E6%B5%85%E6%9E%90%E5%9F%9F%E6%B8%97%E9%80%8F%E7%9A%84pth-ptt-ptk/image-20220308192816206.png">
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/06/%E6%B5%85%E6%9E%90%E5%9F%9F%E6%B8%97%E9%80%8F%E7%9A%84pth-ptt-ptk/image-20220308193145797.png">
 <meta property="article:published_time" content="2022-03-06T12:09:16.000Z">
-<meta property="article:modified_time" content="2022-03-17T08:31:57.575Z">
+<meta property="article:modified_time" content="2022-03-17T10:48:48.137Z">
 <meta property="article:author" content="chen">
 <meta property="article:tag" content="域渗透">
 <meta name="twitter:card" content="summary">
@@ -300,7 +300,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-03-17 16:31:57" itemprop="dateModified" datetime="2022-03-17T16:31:57+08:00">2022-03-17</time>
+      <time title="修改时间：2022-03-17 18:48:48" itemprop="dateModified" datetime="2022-03-17T18:48:48+08:00">2022-03-17</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -356,7 +356,7 @@
 <p>3、 14 个字符的密码被分成 7+7 个字符，并分别计算每一半的哈希值。也就是可以把一个密码分成两次爆破，又降低了爆破难度。</p>
 <p>4、如果密码长度小于等于7，则哈希的后半部分将始终产生相同的常量值 (0xAAD3B435B51404EE)。这就让攻击者很容易识别密码的大概长度。</p>
 <p>5、Hash值在不加盐的情况下发送到网络服务器，易受到中间人攻击，例如Hash重放。（加盐就是在你生成密码后，随机生成一个字符串加到你密码后面进行Hash，这样就算是相同的密码，Hash也是不同的，至于中间人攻击属于密码学范畴，这里不再赘述了）</p>
-<p>这么多缺点为啥还要使用LM Hash这种加密算法？</p>
+<p>LM与NTLM之间的关系</p>
 <p>许多传统的第三方SMB花费了相当长的时间来添加对 Microsoft 创建的用于替换 LM 哈希的更强大协议的支持，因为支持这些库的社区首先必须对较新的协议进行SAMBA花了 5 年时间来添加NTLMv2支持，而JCIFS花了 10 年。也就是LM Hash使用范围太广了，本着向后兼容的原因，还在使用LM Hash进行存储</p>
 <p>NTML(NT Lan Manager)：网上有博主说NTML就是NT hash，其实这样说是不严谨的，在我查阅microsoft的官方文档后发现其实NTLM、NTLMv2 和 Kerberos 都使用 NT hash，也称为 Unicode 哈希。所以，应该叫使用NT hash这种方法，而NTML是一种安全协议。注意NTML和Kerberos（以后会发文详解Kerberos）是两种协议，NTML的认证过程更简单，自然也比Kerberos更易受到攻击。但也是plus版本的LM Hash。</p>
 <p>简单说一下NTML的认证过程：</p>
