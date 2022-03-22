@@ -6,7 +6,7 @@
   <link href="https://linus1124-root.github.io/atom.xml" rel="self"/>
   
   <link href="https://linus1124-root.github.io/"/>
-  <updated>2022-03-20T01:39:42.335Z</updated>
+  <updated>2022-03-22T00:56:12.789Z</updated>
   <id>https://linus1124-root.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>PE中的DOS头解析</title>
+    <link href="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/"/>
+    <id>https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/</id>
+    <published>2022-03-21T11:39:31.000Z</published>
+    <updated>2022-03-22T00:56:12.789Z</updated>
+    
+    <content type="html"><![CDATA[<p>从0开始学习PE头</p><h1 id="什么是PE文件？"><a href="#什么是PE文件？" class="headerlink" title="什么是PE文件？"></a>什么是PE文件？</h1><p>PE文件的全称是Portable Executable，意为可移植的可执行的文件，常见的EXE、DLL、OCX、SYS、COM都是PE文件，PE文件是微软windows上的程序文件（可能是间接被执行，如DLL）。Linux上的是elf文件结构。</p><p>一个概括图</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321195237716.png" class title="image-20220321195237716"><h1 id="MS-DOS头结构的学习"><a href="#MS-DOS头结构的学习" class="headerlink" title="MS-DOS头结构的学习"></a>MS-DOS头结构的学习</h1><p>用的是010editor进行学习</p><p>这里就是一个MS-DOS头</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321203516959.png" class title="image-20220321203516959"><p>主要是为了防止PE文件运行在MS-DOS系统的时候出现一些错误，就是出于兼容性的目的。每个PE文件是以一个DOS程序开始的，有了它，一旦程序在DOS下执行，DOS才能识别出这是有效的执行体。</p><p>后面的一串字符叫MS-Sub，有了这两部分，程序一旦在DOS系统下运行，就会出现一个错误提醒：this program cannot be run in MS-DOS mode。</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321204220683.png" class title="image-20220321204220683"><p>在vs中查看DOS的结构体，_IMAGE_DOS_HEADER，F12可以查看里面调用的接口函数</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321225113289.png" class title="image-20220321225113289"><p>MS-DOS头的结构</p><p>e_magic决定是不是MS-DOS的一个标志，用来判断文件是不是可执行文件，e_lfanew指向新的PE头的字段（这两个最重要）</p><p>其余函数的含义如下</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321231147151.png" class title="image-20220321231147151"><p>用结构体对象的指针指向_IMAGE_DOS_HEADER</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084412293.png" class title="image-20220322084412293"><p>在标志位设置断点，调试后可以发现，在此处会进行填充，ReadDosHeader和buffer都是指针，要进行强制转换</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084439095.png" class title="image-20220322084439095"><p>F10调试一下过后发现DOS头已经被填满了（用16进制来显示）</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084544149.png" class title="image-20220322084544149"><p>可以打印出一些属性看看</p><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084827815.png" class title="image-20220322084827815"><img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322085328264.png" class title="image-20220322085328264">]]></content>
+    
+    
+    <summary type="html">PE文件结构入门到入坟</summary>
+    
+    
+    
+    <category term="逆向" scheme="https://linus1124-root.github.io/categories/%E9%80%86%E5%90%91/"/>
+    
+    
+    <category term="PE" scheme="https://linus1124-root.github.io/tags/PE/"/>
+    
+  </entry>
   
   <entry>
     <title>基于资源的约束委派</title>
