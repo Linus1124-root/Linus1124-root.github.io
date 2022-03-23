@@ -6,7 +6,7 @@
   <link href="https://linus1124-root.github.io/atom.xml" rel="self"/>
   
   <link href="https://linus1124-root.github.io/"/>
-  <updated>2022-03-22T04:01:17.428Z</updated>
+  <updated>2022-03-23T02:41:31.321Z</updated>
   <id>https://linus1124-root.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>区段表解析及遍历</title>
+    <link href="https://linus1124-root.github.io/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/"/>
+    <id>https://linus1124-root.github.io/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/</id>
+    <published>2022-03-23T01:56:40.000Z</published>
+    <updated>2022-03-23T02:41:31.321Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="区段表结构解析"><a href="#区段表结构解析" class="headerlink" title="区段表结构解析"></a>区段表结构解析</h1><p>查看区段的一些信息</p><img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323100649979.png" class title="image-20220323100649979"><p>一些基本特征</p><img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101502214.png" class title="image-20220323101502214"><p>使用lordPE查看区段表</p><img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101610691.png" class title="image-20220323101610691"><p>根据区段的基本特征打印相关属性</p><img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323103652084.png" class title="image-20220323103652084"><p>成功打印出了区段的属性</p><img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323103817136.png" class title="image-20220323103817136"><p>与LordPE进行对比是没有错误的，这就是一次对区段表的遍历</p>]]></content>
+    
+    
+    <summary type="html">PE文件结构入门到入坟</summary>
+    
+    
+    
+    <category term="逆向" scheme="https://linus1124-root.github.io/categories/%E9%80%86%E5%90%91/"/>
+    
+    
+    <category term="PE" scheme="https://linus1124-root.github.io/tags/PE/"/>
+    
+  </entry>
   
   <entry>
     <title>PE头结构分析</title>
