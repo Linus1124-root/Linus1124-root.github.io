@@ -6,7 +6,7 @@
   <link href="https://linus1124-root.github.io/atom.xml" rel="self"/>
   
   <link href="https://linus1124-root.github.io/"/>
-  <updated>2022-03-25T02:31:44.289Z</updated>
+  <updated>2022-03-25T10:37:11.281Z</updated>
   <id>https://linus1124-root.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>导入表结构解析</title>
+    <link href="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/"/>
+    <id>https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</id>
+    <published>2022-03-25T08:15:57.000Z</published>
+    <updated>2022-03-25T10:37:11.281Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="导入表解析"><a href="#导入表解析" class="headerlink" title="导入表解析"></a>导入表解析</h1><p>导入表就是记录PE程序从外部导入动态链接库的东西。他只起一个引导的作用。</p><p>使用LordPE先查看导入表的一些基本信息，可以看到每一个动态链接库都调用了很多api</p><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png" class title="image-20220325162801268"><p>查看三个与导入表相关的结构（解析主要在图片里面的注释）</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">IMAGE_IMPORT_DESCRIPTOR</span><br><span class="line">IMAGE_THUNK_DATA</span><br><span class="line">IMAGE_IMPORT_BY_NAME</span><br></pre></td></tr></table></figure><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325163835784.png" class title="image-20220325163835784"><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325170815048.png" class title="image-20220325170815048"><p>结构理清楚过后就写代码来解析</p><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180456376.png" class title="image-20220325180456376"><p>这里还要在主函数之中调用一下</p><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180527792.png" class title="image-20220325180527792"><p>可以看到返回了我们想要的结果，把导入表进行了遍历</p><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180651925.png" class title="image-20220325180651925"><p>导入表的上半部分导入表的相关信息已经解析成功了，现在解析下半部分的api函数部分</p><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180821535.png" class title="image-20220325180821535"><p>还是通过写函数来解析</p><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183239217.png" class title="image-20220325183239217"><img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183508506.png" class title="image-20220325183508506"><p>可以看到是成功解析了的，并且顺序也没有问题，这就是一个基本的导入表的分析</p><p>总结：导入表的大小主要取决于写代码的时候导入了多少动态链接库，就会在导入表这里显示导入了多少动态链接库，导入了多少函数。如果正常程序调用了太多dll可能会引起误报，所以做免杀的时候可以将导入表不显示。例如可以写壳等方式。</p>]]></content>
+    
+    
+    <summary type="html">PE文件结构入门到入坟</summary>
+    
+    
+    
+    <category term="逆向" scheme="https://linus1124-root.github.io/categories/%E9%80%86%E5%90%91/"/>
+    
+    
+    <category term="PE" scheme="https://linus1124-root.github.io/tags/PE/"/>
+    
+  </entry>
   
   <entry>
     <title>目录表结构与地址转换函数</title>

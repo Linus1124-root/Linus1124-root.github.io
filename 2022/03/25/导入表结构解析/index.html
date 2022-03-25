@@ -23,33 +23,36 @@
 
     <meta name="description" content="PE文件结构入门到入坟">
 <meta property="og:type" content="article">
-<meta property="og:title" content="目录表结构与地址转换函数">
-<meta property="og:url" content="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/index.html">
+<meta property="og:title" content="导入表结构解析">
+<meta property="og:url" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/index.html">
 <meta property="og:site_name" content="Linus1124">
 <meta property="og:description" content="PE文件结构入门到入坟">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325091841547.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092100128.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092838107.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325094859726.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325095446911.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325102410695.png">
-<meta property="article:published_time" content="2022-03-25T00:51:36.000Z">
-<meta property="article:modified_time" content="2022-03-25T02:31:44.289Z">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325163835784.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325170815048.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180456376.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180527792.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180651925.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180821535.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183239217.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183508506.png">
+<meta property="article:published_time" content="2022-03-25T08:15:57.000Z">
+<meta property="article:modified_time" content="2022-03-25T10:37:11.281Z">
 <meta property="article:author" content="chen">
 <meta property="article:tag" content="PE">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325091841547.png">
+<meta name="twitter:image" content="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png">
 
 
-<link rel="canonical" href="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/">
+<link rel="canonical" href="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/","path":"2022/03/25/目录表结构与地址转换函数/","title":"目录表结构与地址转换函数"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/","path":"2022/03/25/导入表结构解析/","title":"导入表结构解析"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>目录表结构与地址转换函数 | Linus1124</title>
+<title>导入表结构解析 | Linus1124</title>
   
 
 
@@ -157,7 +160,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">数据目录表结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%86%99%E4%B8%80%E4%B8%AA%E8%AE%A1%E7%AE%97%E5%81%8F%E7%A7%BB%E7%9A%84%E5%87%BD%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">写一个计算偏移的函数</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AF%BC%E5%85%A5%E8%A1%A8%E8%A7%A3%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">导入表解析</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -212,7 +215,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/">
+    <link itemprop="mainEntityOfPage" href="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -225,12 +228,12 @@
     </span>
     
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="目录表结构与地址转换函数 | Linus1124">
+      <meta itemprop="name" content="导入表结构解析 | Linus1124">
       <meta itemprop="description" content="PE文件结构入门到入坟">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          目录表结构与地址转换函数
+          导入表结构解析
         </h1>
 
         <div class="post-meta-container">
@@ -242,7 +245,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2022-03-25 08:51:36 / 修改时间：10:31:44" itemprop="dateCreated datePublished" datetime="2022-03-25T08:51:36+08:00">2022-03-25</time>
+      <time title="创建时间：2022-03-25 16:15:57 / 修改时间：18:37:11" itemprop="dateCreated datePublished" datetime="2022-03-25T16:15:57+08:00">2022-03-25</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -268,14 +271,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>217</span>
+      <span>421</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>1 分钟</span>
+      <span>2 分钟</span>
     </span>
 </div>
 
@@ -287,31 +290,48 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h1 id="数据目录表结构"><a href="#数据目录表结构" class="headerlink" title="数据目录表结构"></a>数据目录表结构</h1><p>先用LordPE看看基本的目录结构</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325091841547.png" class title="image-20220325091841547">
+        <h1 id="导入表解析"><a href="#导入表解析" class="headerlink" title="导入表解析"></a>导入表解析</h1><p>导入表就是记录PE程序从外部导入动态链接库的东西。他只起一个引导的作用。</p>
+<p>使用LordPE先查看导入表的一些基本信息，可以看到每一个动态链接库都调用了很多api</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png" class title="image-20220325162801268">
 
 
 
-<p>用vs查看目录结构具体有哪些参数</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092100128.png" class title="image-20220325092100128">
-
-<p>只有两个字段，一个是虚拟地址（数据目录表起始的位置），一个是尺寸（数据目录表结束的位置）</p>
-<p>起始地址+尺寸&#x3D;结束的地址</p>
-<p>vs用宏来定义数据目录结构</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092838107.png" class>
-
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325094859726.png" class title="image-20220325094859726">
+<p>查看三个与导入表相关的结构（解析主要在图片里面的注释）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">IMAGE_IMPORT_DESCRIPTOR</span><br><span class="line">IMAGE_THUNK_DATA</span><br><span class="line">IMAGE_IMPORT_BY_NAME</span><br></pre></td></tr></table></figure>
 
 
 
-<h1 id="写一个计算偏移的函数"><a href="#写一个计算偏移的函数" class="headerlink" title="写一个计算偏移的函数"></a>写一个计算偏移的函数</h1><p>先创建一个定义</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325095446911.png" class title="image-20220325095446911">
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325163835784.png" class title="image-20220325163835784">
+
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325170815048.png" class title="image-20220325170815048">
 
 
 
-<p>开始写函数，要从DOS头开始解析，然后解析PE头，区段表，再判断目录表是否落在了头部，或者落在了某个区段内，需要分两种情况，返回的dwRva是不同的，具体的解析可以看下图</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325102410695.png" class title="image-20220325102410695">
+<p>结构理清楚过后就写代码来解析</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180456376.png" class title="image-20220325180456376">
 
+<p>这里还要在主函数之中调用一下</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180527792.png" class title="image-20220325180527792">
+
+
+
+<p>可以看到返回了我们想要的结果，把导入表进行了遍历</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180651925.png" class title="image-20220325180651925">
+
+
+
+<p>导入表的上半部分导入表的相关信息已经解析成功了，现在解析下半部分的api函数部分</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180821535.png" class title="image-20220325180821535">
+
+
+
+<p>还是通过写函数来解析</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183239217.png" class title="image-20220325183239217">
+
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183508506.png" class title="image-20220325183508506">
+
+<p>可以看到是成功解析了的，并且顺序也没有问题，这就是一个基本的导入表的分析</p>
+<p>总结：导入表的大小主要取决于写代码的时候导入了多少动态链接库，就会在导入表这里显示导入了多少动态链接库，导入了多少函数。如果正常程序调用了太多dll可能会引起误报，所以做免杀的时候可以将导入表不显示。例如可以写壳等方式。</p>
 
     </div>
 
@@ -329,7 +349,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/" title="目录表结构与地址转换函数">https://linus1124-root.github.io/2022/03/25/目录表结构与地址转换函数/</a>
+      <a href="https://linus1124-root.github.io/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/" title="导入表结构解析">https://linus1124-root.github.io/2022/03/25/导入表结构解析/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-SA</a> 许可协议。转载请注明出处！
@@ -345,14 +365,11 @@
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/" rel="prev" title="区段表解析及遍历">
-                  <i class="fa fa-chevron-left"></i> 区段表解析及遍历
+                <a href="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/" rel="prev" title="目录表结构与地址转换函数">
+                  <i class="fa fa-chevron-left"></i> 目录表结构与地址转换函数
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/" rel="next" title="导入表结构解析">
-                  导入表结构解析 <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>
