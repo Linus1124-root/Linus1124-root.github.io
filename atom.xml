@@ -6,7 +6,7 @@
   <link href="https://linus1124-root.github.io/atom.xml" rel="self"/>
   
   <link href="https://linus1124-root.github.io/"/>
-  <updated>2022-03-23T02:41:31.321Z</updated>
+  <updated>2022-03-25T02:31:44.289Z</updated>
   <id>https://linus1124-root.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>目录表结构与地址转换函数</title>
+    <link href="https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/"/>
+    <id>https://linus1124-root.github.io/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/</id>
+    <published>2022-03-25T00:51:36.000Z</published>
+    <updated>2022-03-25T02:31:44.289Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="数据目录表结构"><a href="#数据目录表结构" class="headerlink" title="数据目录表结构"></a>数据目录表结构</h1><p>先用LordPE看看基本的目录结构</p><img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325091841547.png" class title="image-20220325091841547"><p>用vs查看目录结构具体有哪些参数</p><img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092100128.png" class title="image-20220325092100128"><p>只有两个字段，一个是虚拟地址（数据目录表起始的位置），一个是尺寸（数据目录表结束的位置）</p><p>起始地址+尺寸&#x3D;结束的地址</p><p>vs用宏来定义数据目录结构</p><img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092838107.png" class><img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325094859726.png" class title="image-20220325094859726"><h1 id="写一个计算偏移的函数"><a href="#写一个计算偏移的函数" class="headerlink" title="写一个计算偏移的函数"></a>写一个计算偏移的函数</h1><p>先创建一个定义</p><img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325095446911.png" class title="image-20220325095446911"><p>开始写函数，要从DOS头开始解析，然后解析PE头，区段表，再判断目录表是否落在了头部，或者落在了某个区段内，需要分两种情况，返回的dwRva是不同的，具体的解析可以看下图</p><img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325102410695.png" class title="image-20220325102410695">]]></content>
+    
+    
+    <summary type="html">PE文件结构入门到入坟</summary>
+    
+    
+    
+    <category term="逆向" scheme="https://linus1124-root.github.io/categories/%E9%80%86%E5%90%91/"/>
+    
+    
+    <category term="PE" scheme="https://linus1124-root.github.io/tags/PE/"/>
+    
+  </entry>
   
   <entry>
     <title>区段表解析及遍历</title>
