@@ -408,59 +408,6 @@
       </tags>
   </entry>
   <entry>
-    <title>导入表结构解析</title>
-    <url>/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="导入表解析"><a href="#导入表解析" class="headerlink" title="导入表解析"></a>导入表解析</h1><p>导入表就是记录PE程序从外部导入动态链接库的东西。他只起一个引导的作用。</p>
-<p>使用LordPE先查看导入表的一些基本信息，可以看到每一个动态链接库都调用了很多api</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png" class title="image-20220325162801268">
-
-
-
-<p>查看三个与导入表相关的结构（解析主要在图片里面的注释）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IMAGE_IMPORT_DESCRIPTOR</span><br><span class="line">IMAGE_THUNK_DATA</span><br><span class="line">IMAGE_IMPORT_BY_NAME</span><br></pre></td></tr></table></figure>
-
-
-
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325163835784.png" class title="image-20220325163835784">
-
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325170815048.png" class title="image-20220325170815048">
-
-
-
-<p>结构理清楚过后就写代码来解析</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180456376.png" class title="image-20220325180456376">
-
-<p>这里还要在主函数之中调用一下</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180527792.png" class title="image-20220325180527792">
-
-
-
-<p>可以看到返回了我们想要的结果，把导入表进行了遍历</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180651925.png" class title="image-20220325180651925">
-
-
-
-<p>导入表的上半部分导入表的相关信息已经解析成功了，现在解析下半部分的api函数部分</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180821535.png" class title="image-20220325180821535">
-
-
-
-<p>还是通过写函数来解析</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183239217.png" class title="image-20220325183239217">
-
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183508506.png" class title="image-20220325183508506">
-
-<p>可以看到是成功解析了的，并且顺序也没有问题，这就是一个基本的导入表的分析</p>
-<p>总结：导入表的大小主要取决于写代码的时候导入了多少动态链接库，就会在导入表这里显示导入了多少动态链接库，导入了多少函数。如果正常程序调用了太多dll可能会引起误报，所以做免杀的时候可以将导入表不显示。例如可以写壳等方式。</p>
-]]></content>
-      <categories>
-        <category>逆向</category>
-      </categories>
-      <tags>
-        <tag>PE</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>区段表解析及遍历</title>
     <url>/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/</url>
     <content><![CDATA[<h1 id="区段表结构解析"><a href="#区段表结构解析" class="headerlink" title="区段表结构解析"></a>区段表结构解析</h1><p>查看区段的一些信息</p>
@@ -731,6 +678,107 @@
       </categories>
       <tags>
         <tag>域渗透</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>导入表结构解析</title>
+    <url>/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="导入表解析"><a href="#导入表解析" class="headerlink" title="导入表解析"></a>导入表解析</h1><p>导入表就是记录PE程序从外部导入动态链接库的东西。他只起一个引导的作用。</p>
+<p>使用LordPE先查看导入表的一些基本信息，可以看到每一个动态链接库都调用了很多api</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png" class title="image-20220325162801268">
+
+
+
+<p>查看三个与导入表相关的结构（解析主要在图片里面的注释）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IMAGE_IMPORT_DESCRIPTOR</span><br><span class="line">IMAGE_THUNK_DATA</span><br><span class="line">IMAGE_IMPORT_BY_NAME</span><br></pre></td></tr></table></figure>
+
+
+
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325163835784.png" class title="image-20220325163835784">
+
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325170815048.png" class title="image-20220325170815048">
+
+
+
+<p>结构理清楚过后就写代码来解析</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180456376.png" class title="image-20220325180456376">
+
+<p>这里还要在主函数之中调用一下</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180527792.png" class title="image-20220325180527792">
+
+
+
+<p>可以看到返回了我们想要的结果，把导入表进行了遍历</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180651925.png" class title="image-20220325180651925">
+
+
+
+<p>导入表的上半部分导入表的相关信息已经解析成功了，现在解析下半部分的api函数部分</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180821535.png" class title="image-20220325180821535">
+
+
+
+<p>还是通过写函数来解析</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183239217.png" class title="image-20220325183239217">
+
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183508506.png" class title="image-20220325183508506">
+
+<p>可以看到是成功解析了的，并且顺序也没有问题，这就是一个基本的导入表的分析</p>
+<p>总结：导入表的大小主要取决于写代码的时候导入了多少动态链接库，就会在导入表这里显示导入了多少动态链接库，导入了多少函数。如果正常程序调用了太多dll可能会引起误报，所以做免杀的时候可以将导入表不显示。例如可以写壳等方式。</p>
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>导出表结构解析</title>
+    <url>/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><p>正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png" class title="image-20220326140512674">
+
+
+
+<p>导出表的基本结构，进入导出表</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png" class title="image-20220326140711566">
+
+<p>相关的参数如图中的注释</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png" class title="image-20220326141430682">
+
+
+
+<p>写函数解析导出表上半部分的结构</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png" class title="image-20220326144108918">
+
+<p>在LordPE中这就是红线框起来的部分</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144155090.png" class title="image-20220326144155090">
+
+<p>还需要把下面的函数名以及RVA等打印出来</p>
+<p>后面三个属性需要是RVA需要转换</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326150854304.png" class title="image-20220326150854304">
+
+<p>执行后成功返回我们需要的信息</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png" class title="image-20220326151530348">
+
+
+
+<p>重点理解一下最后三个RVA（AddressOfFunctions，AddressOfNames，AddressOfNameOrdinals）</p>
+<p>AddressOfFunctions：一个RVA，指向一个DWORD数组，数组中的每一项是一个导出函数的RVA，顺序与导出序号相同。</p>
+<p>AddressOfNames：一个RVA，依然指向一个DWORD数组，数组中的每一项仍然是一个RVA，指向一个表示函数名字。</p>
+<p>AddressOfNameOrdinals：一个RVA，还是指向一个WORD数组，数组中的每一项与AddressOfNames中的每一项对应，表示该名字的函数在AddressOfFunctions中的序号。</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png" class title="image-20220326153512424">
+
+
+
+<p>参考：<a href="https://blog.csdn.net/evileagle/article/details/12176797">https://blog.csdn.net/evileagle/article/details/12176797</a></p>
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
       </tags>
   </entry>
   <entry>

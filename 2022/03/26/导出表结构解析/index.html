@@ -23,37 +23,35 @@
 
     <meta name="description" content="PE文件结构入门到入坟">
 <meta property="og:type" content="article">
-<meta property="og:title" content="PE中的DOS头解析">
-<meta property="og:url" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:title" content="导出表结构解析">
+<meta property="og:url" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/index.html">
 <meta property="og:site_name" content="Linus1124">
 <meta property="og:description" content="PE文件结构入门到入坟">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321195237716.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321203516959.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321204220683.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321225113289.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321231147151.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084412293.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084439095.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084544149.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084827815.png">
-<meta property="og:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322085328264.png">
-<meta property="article:published_time" content="2022-03-21T11:39:31.000Z">
-<meta property="article:modified_time" content="2022-03-22T00:56:12.789Z">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144155090.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326150854304.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png">
+<meta property="article:published_time" content="2022-03-26T00:10:56.000Z">
+<meta property="article:modified_time" content="2022-03-26T07:35:28.597Z">
 <meta property="article:author" content="chen">
 <meta property="article:tag" content="PE">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321195237716.png">
+<meta name="twitter:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png">
 
 
-<link rel="canonical" href="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/">
+<link rel="canonical" href="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/","path":"2022/03/21/PE中的DOS头解析/","title":"PE中的DOS头解析"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/","path":"2022/03/26/导出表结构解析/","title":"导出表结构解析"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>PE中的DOS头解析 | Linus1124</title>
+<title>导出表结构解析 | Linus1124</title>
   
 
 
@@ -161,7 +159,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFPE%E6%96%87%E4%BB%B6%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">什么是PE文件？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MS-DOS%E5%A4%B4%E7%BB%93%E6%9E%84%E7%9A%84%E5%AD%A6%E4%B9%A0"><span class="nav-number">2.</span> <span class="nav-text">MS-DOS头结构的学习</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">导出表结构解析</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -216,7 +214,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/">
+    <link itemprop="mainEntityOfPage" href="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -229,12 +227,12 @@
     </span>
     
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="PE中的DOS头解析 | Linus1124">
+      <meta itemprop="name" content="导出表结构解析 | Linus1124">
       <meta itemprop="description" content="PE文件结构入门到入坟">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          PE中的DOS头解析
+          导出表结构解析
         </h1>
 
         <div class="post-meta-container">
@@ -244,15 +242,9 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
+      
 
-      <time title="创建时间：2022-03-21 19:39:31" itemprop="dateCreated datePublished" datetime="2022-03-21T19:39:31+08:00">2022-03-21</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-03-22 08:56:12" itemprop="dateModified" datetime="2022-03-22T08:56:12+08:00">2022-03-22</time>
+      <time title="创建时间：2022-03-26 08:10:56 / 修改时间：15:35:28" itemprop="dateCreated datePublished" datetime="2022-03-26T08:10:56+08:00">2022-03-26</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -278,7 +270,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>621</span>
+      <span>510</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -297,53 +289,43 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>从0开始学习PE头</p>
-<h1 id="什么是PE文件？"><a href="#什么是PE文件？" class="headerlink" title="什么是PE文件？"></a>什么是PE文件？</h1><p>PE文件的全称是Portable Executable，意为可移植的可执行的文件，常见的EXE、DLL、OCX、SYS、COM都是PE文件，PE文件是微软windows上的程序文件（可能是间接被执行，如DLL）。Linux上的是elf文件结构。</p>
-<p>一个概括图</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321195237716.png" class title="image-20220321195237716">
-
-<h1 id="MS-DOS头结构的学习"><a href="#MS-DOS头结构的学习" class="headerlink" title="MS-DOS头结构的学习"></a>MS-DOS头结构的学习</h1><p>用的是010editor进行学习</p>
-<p>这里就是一个MS-DOS头</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321203516959.png" class title="image-20220321203516959">
-
-<p>主要是为了防止PE文件运行在MS-DOS系统的时候出现一些错误，就是出于兼容性的目的。每个PE文件是以一个DOS程序开始的，有了它，一旦程序在DOS下执行，DOS才能识别出这是有效的执行体。</p>
-<p>后面的一串字符叫MS-Sub，有了这两部分，程序一旦在DOS系统下运行，就会出现一个错误提醒：this program cannot be run in MS-DOS mode。</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321204220683.png" class title="image-20220321204220683">
+        <h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><p>正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png" class title="image-20220326140512674">
 
 
 
-<p>在vs中查看DOS的结构体，_IMAGE_DOS_HEADER，F12可以查看里面调用的接口函数</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321225113289.png" class title="image-20220321225113289">
+<p>导出表的基本结构，进入导出表</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png" class title="image-20220326140711566">
+
+<p>相关的参数如图中的注释</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png" class title="image-20220326141430682">
 
 
 
-<p>MS-DOS头的结构</p>
-<p>e_magic决定是不是MS-DOS的一个标志，用来判断文件是不是可执行文件，e_lfanew指向新的PE头的字段（这两个最重要）</p>
-<p>其余函数的含义如下</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321231147151.png" class title="image-20220321231147151">
+<p>写函数解析导出表上半部分的结构</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png" class title="image-20220326144108918">
+
+<p>在LordPE中这就是红线框起来的部分</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144155090.png" class title="image-20220326144155090">
+
+<p>还需要把下面的函数名以及RVA等打印出来</p>
+<p>后面三个属性需要是RVA需要转换</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326150854304.png" class title="image-20220326150854304">
+
+<p>执行后成功返回我们需要的信息</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png" class title="image-20220326151530348">
 
 
 
-<p>用结构体对象的指针指向_IMAGE_DOS_HEADER</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084412293.png" class title="image-20220322084412293">
+<p>重点理解一下最后三个RVA（AddressOfFunctions，AddressOfNames，AddressOfNameOrdinals）</p>
+<p>AddressOfFunctions：一个RVA，指向一个DWORD数组，数组中的每一项是一个导出函数的RVA，顺序与导出序号相同。</p>
+<p>AddressOfNames：一个RVA，依然指向一个DWORD数组，数组中的每一项仍然是一个RVA，指向一个表示函数名字。</p>
+<p>AddressOfNameOrdinals：一个RVA，还是指向一个WORD数组，数组中的每一项与AddressOfNames中的每一项对应，表示该名字的函数在AddressOfFunctions中的序号。</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png" class title="image-20220326153512424">
 
 
 
-<p>在标志位设置断点，调试后可以发现，在此处会进行填充，ReadDosHeader和buffer都是指针，要进行强制转换</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084439095.png" class title="image-20220322084439095">
-
-
-
-<p>F10调试一下过后发现DOS头已经被填满了（用16进制来显示）</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084544149.png" class title="image-20220322084544149">
-
-
-
-<p>可以打印出一些属性看看</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084827815.png" class title="image-20220322084827815">
-
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322085328264.png" class title="image-20220322085328264">
-
+<p>参考：<a target="_blank" rel="noopener" href="https://blog.csdn.net/evileagle/article/details/12176797">https://blog.csdn.net/evileagle/article/details/12176797</a></p>
 
     </div>
 
@@ -361,7 +343,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="https://linus1124-root.github.io/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/" title="PE中的DOS头解析">https://linus1124-root.github.io/2022/03/21/PE中的DOS头解析/</a>
+      <a href="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/" title="导出表结构解析">https://linus1124-root.github.io/2022/03/26/导出表结构解析/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-SA</a> 许可协议。转载请注明出处！
@@ -377,14 +359,11 @@
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2022/03/18/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/" rel="prev" title="基于资源的约束委派">
-                  <i class="fa fa-chevron-left"></i> 基于资源的约束委派
+                <a href="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/" rel="prev" title="导入表结构解析">
+                  <i class="fa fa-chevron-left"></i> 导入表结构解析
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2022/03/22/PE%E5%A4%B4%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/" rel="next" title="PE头结构分析">
-                  PE头结构分析 <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>

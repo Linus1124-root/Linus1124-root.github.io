@@ -6,7 +6,7 @@
   <link href="https://linus1124-root.github.io/atom.xml" rel="self"/>
   
   <link href="https://linus1124-root.github.io/"/>
-  <updated>2022-03-25T10:37:11.281Z</updated>
+  <updated>2022-03-26T07:35:28.597Z</updated>
   <id>https://linus1124-root.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>导出表结构解析</title>
+    <link href="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/"/>
+    <id>https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</id>
+    <published>2022-03-26T00:10:56.000Z</published>
+    <updated>2022-03-26T07:35:28.597Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><p>正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p><img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png" class title="image-20220326140512674"><p>导出表的基本结构，进入导出表</p><img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png" class title="image-20220326140711566"><p>相关的参数如图中的注释</p><img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png" class title="image-20220326141430682"><p>写函数解析导出表上半部分的结构</p><img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png" class title="image-20220326144108918"><p>在LordPE中这就是红线框起来的部分</p><img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144155090.png" class title="image-20220326144155090"><p>还需要把下面的函数名以及RVA等打印出来</p><p>后面三个属性需要是RVA需要转换</p><img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326150854304.png" class title="image-20220326150854304"><p>执行后成功返回我们需要的信息</p><img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png" class title="image-20220326151530348"><p>重点理解一下最后三个RVA（AddressOfFunctions，AddressOfNames，AddressOfNameOrdinals）</p><p>AddressOfFunctions：一个RVA，指向一个DWORD数组，数组中的每一项是一个导出函数的RVA，顺序与导出序号相同。</p><p>AddressOfNames：一个RVA，依然指向一个DWORD数组，数组中的每一项仍然是一个RVA，指向一个表示函数名字。</p><p>AddressOfNameOrdinals：一个RVA，还是指向一个WORD数组，数组中的每一项与AddressOfNames中的每一项对应，表示该名字的函数在AddressOfFunctions中的序号。</p><img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png" class title="image-20220326153512424"><p>参考：<a href="https://blog.csdn.net/evileagle/article/details/12176797">https://blog.csdn.net/evileagle/article/details/12176797</a></p>]]></content>
+    
+    
+    <summary type="html">PE文件结构入门到入坟</summary>
+    
+    
+    
+    <category term="逆向" scheme="https://linus1124-root.github.io/categories/%E9%80%86%E5%90%91/"/>
+    
+    
+    <category term="PE" scheme="https://linus1124-root.github.io/tags/PE/"/>
+    
+  </entry>
   
   <entry>
     <title>导入表结构解析</title>
