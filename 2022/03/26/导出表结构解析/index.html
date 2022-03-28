@@ -29,6 +29,8 @@
 <meta property="og:description" content="PE文件结构入门到入坟">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094315573.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094840802.png">
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png">
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png">
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png">
@@ -37,7 +39,7 @@
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png">
 <meta property="og:image" content="https://linus1124-root.github.io/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png">
 <meta property="article:published_time" content="2022-03-26T00:10:56.000Z">
-<meta property="article:modified_time" content="2022-03-26T07:35:28.597Z">
+<meta property="article:modified_time" content="2022-03-28T01:50:19.073Z">
 <meta property="article:author" content="chen">
 <meta property="article:tag" content="PE">
 <meta name="twitter:card" content="summary">
@@ -159,7 +161,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">导出表结构解析</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">导出表结构解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E5%AF%BC%E5%87%BA%E8%A1%A8"><span class="nav-number">1.1.</span> <span class="nav-text">什么是导出表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90%E5%AF%BC%E5%87%BA%E8%A1%A8"><span class="nav-number">1.2.</span> <span class="nav-text">代码解析导出表</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -242,9 +244,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2022-03-26 08:10:56 / 修改时间：15:35:28" itemprop="dateCreated datePublished" datetime="2022-03-26T08:10:56+08:00">2022-03-26</time>
+      <time title="创建时间：2022-03-26 08:10:56" itemprop="dateCreated datePublished" datetime="2022-03-26T08:10:56+08:00">2022-03-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-03-28 09:50:19" itemprop="dateModified" datetime="2022-03-28T09:50:19+08:00">2022-03-28</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -270,14 +278,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>510</span>
+      <span>720</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>3 分钟</span>
+      <span>4 分钟</span>
     </span>
 </div>
 
@@ -289,12 +297,19 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><p>正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p>
+        <h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><h2 id="什么是导出表"><a href="#什么是导出表" class="headerlink" title="什么是导出表"></a>什么是导出表</h2><p>一个程序引用哪些模块是由导入表决定的，与导入表对应的就是导出表，导出表则是决定当前的PE文件能够给其它PE文件提供的函数。正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p>
+<p>使用010Editor查看导出表</p>
 <img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png" class title="image-20220326140512674">
 
+<p>在PE的NT头下的扩展头下的DataDirArray[0]表达的是导出表的位置和大小</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094315573.png" class title="image-20220328094315573">
+
+<p>可以看到VitualAddress和Size都是DWORD类型，但是这里知识导出表的起始地址(RVA)，在010editor直接Ctrl+G搜索，F1950</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094840802.png" class title="image-20220328094840802">
 
 
-<p>导出表的基本结构，进入导出表</p>
+
+<h2 id="代码解析导出表"><a href="#代码解析导出表" class="headerlink" title="代码解析导出表"></a>代码解析导出表</h2><p>导出表的基本结构，进入导出表</p>
 <img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png" class title="image-20220326140711566">
 
 <p>相关的参数如图中的注释</p>

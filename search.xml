@@ -1,6 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>PE中的DOS头解析</title>
+    <url>/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<p>从0开始学习PE头</p>
+<h1 id="什么是PE文件？"><a href="#什么是PE文件？" class="headerlink" title="什么是PE文件？"></a>什么是PE文件？</h1><p>PE文件的全称是Portable Executable，意为可移植的可执行的文件，常见的EXE、DLL、OCX、SYS、COM都是PE文件，PE文件是微软windows上的程序文件（可能是间接被执行，如DLL）。PE文件有一个共同特点：前两个字节为4D 5A（MZ）。如果一个文件前两个字节不是4D 5A则其肯定不是可执行文件。Linux上的是elf文件结构。</p>
+<p>一个概括图</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321195237716.png" class title="image-20220321195237716">
+
+<h1 id="MS-DOS头结构的学习，共40h（64字节）"><a href="#MS-DOS头结构的学习，共40h（64字节）" class="headerlink" title="MS-DOS头结构的学习，共40h（64字节）"></a>MS-DOS头结构的学习，共40h（64字节）</h1><p>用的是010editor进行学习</p>
+<p>这里就是一个MS-DOS头</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321203516959.png" class title="image-20220321203516959">
+
+<p>主要是为了防止PE文件运行在MS-DOS系统的时候出现一些错误，就是出于兼容性的目的。每个PE文件是以一个DOS程序开始的，有了它，一旦程序在DOS下执行，DOS才能识别出这是有效的执行体。</p>
+<p>后面的一串字符叫MS-Sub，有了这两部分，程序一旦在DOS系统下运行，就会出现一个错误提醒：this program cannot be run in MS-DOS mode。这些是垃圾值，以及编译器填充的垃圾字符。</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321204220683.png" class title="image-20220321204220683">
+
+
+
+<p>在vs中查看DOS的结构体，_IMAGE_DOS_HEADER，F12可以查看里面调用的接口函数</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321225113289.png" class title="image-20220321225113289">
+
+
+
+<p>MS-DOS头的结构</p>
+<p>e_magic决定是不是MS-DOS的一个标志，用来判断文件是不是可执行文件，e_lfanew指向新的PE头的字段（这两个最重要）</p>
+<p>其余函数的含义如下</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321231147151.png" class title="image-20220321231147151">
+
+
+
+<p>用结构体对象的指针指向_IMAGE_DOS_HEADER</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084412293.png" class title="image-20220322084412293">
+
+
+
+<p>在标志位设置断点，调试后可以发现，在此处会进行填充，ReadDosHeader和buffer都是指针，要进行强制转换</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084439095.png" class title="image-20220322084439095">
+
+
+
+<p>F10调试一下过后发现DOS头已经被填满了（用16进制来显示）</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084544149.png" class title="image-20220322084544149">
+
+
+
+<p>可以打印出一些属性看看</p>
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084827815.png" class title="image-20220322084827815">
+
+<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322085328264.png" class title="image-20220322085328264">
+
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>PE头结构分析</title>
     <url>/2022/03/22/PE%E5%A4%B4%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/</url>
     <content><![CDATA[<p>从0开始学习PE头</p>
@@ -98,129 +156,6 @@
 <img data-src="/2022/03/22/PE%E5%A4%B4%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/image-20220322115754326.png" class title="image-20220322115754326">
 
 <p>这就是分析一个基本PE头的过程</p>
-]]></content>
-      <categories>
-        <category>逆向</category>
-      </categories>
-      <tags>
-        <tag>PE</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>区段表解析及遍历</title>
-    <url>/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/</url>
-    <content><![CDATA[<h1 id="区段表结构解析"><a href="#区段表结构解析" class="headerlink" title="区段表结构解析"></a>区段表结构解析</h1><h2 id="区段名及其含义"><a href="#区段名及其含义" class="headerlink" title="区段名及其含义"></a>区段名及其含义</h2><p>使用lordPE查看区段表</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327174738493.png" class title="image-20220327174738493">
-
-<p>常用的一些区段</p>
-<p>.text：表示代码段，里面的数据都是代码（有些编译器是code段）</p>
-<p>.data：可读写的数据段，放的是全局变量和局部变量</p>
-<p>.rdata：表示只读数据段，但程序中很少用到该块中的数据</p>
-<p>.idata：放入导入表的信息</p>
-<p>.edata：放入导出表的信息</p>
-<p>.rsrc：表示资源段，如图标，菜单，位图等，这个区块是只读的</p>
-<p>.bss：表示位初始化的数据，很少在用，取而代之的是执行文件的.data区块的的VirtualSize被扩展大的空间里用来装未初始化的数据</p>
-<p>.crt：表示C++ 运行时(CRT)所添加的数据</p>
-<p>.tls：表示线程局部存储器包括数据的初始化值，也包括运行时所需要的额外变量</p>
-<p>.reloc：可执行文件的基址重定位，基址重定位一般仅Dll需要的</p>
-<p>.sdata：相对于全局指针的可被定位的短的读写数据</p>
-<p>.pdata：异常表,包含CPU特定的IAMGE_RUNTIME_FUNTION_ENTRY结构数组，DataDirectory中的IMAGE_DIRECTORY_ENTRY_EXCEPTION指向它</p>
-<p>.didat：延迟装入输入数据，在非Release模式下可以找到</p>
-<p>从区段表可以看出.text段的RVA为1000，大小为A966，也就是说.text区段在内存中的位置是从1000~B966。其他区段也是一样的</p>
-<p>所以因此可以画出程序加载到内存后的分布，以及文件在硬盘的分布</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327180422539.png" class title="image-20220327180422539">
-
-<p>程序加载到内存之后，都会分配4GB的内存地址空间（注：并不是内存大小）。在区段与区段之间并不是紧挨着的，因为内存会进行0x1000的内存对齐，空出来的空间进行填充0字节的数据。例如B966~C000的空间都是填充的0字节数据。<strong>010editor中区段与区段之间，会存在填充0的部分，这也是为了实现文件对齐。</strong></p>
-<p><strong>如何识别一个区段为代码段还是其他区段?（名字为.text并不一定就是代码块，.text可以改成任意名称，比如.asd）</strong></p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181036922.png" class title="image-20220327181036922">
-
-<p>RVA&#x3D;1000的是代码块</p>
-<p>最主要的还是查看特征值的属性，每个区段的属性都不一样</p>
-<p>这是.text的属性</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181302574.png" class title="image-20220327181302574">
-
-<p>这是.rdata的属性</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181402627.png" class title="image-20220327181402627">
-
-
-
-
-
-<h2 id="每个区段的基本信息"><a href="#每个区段的基本信息" class="headerlink" title="每个区段的基本信息"></a>每个区段的基本信息</h2><p>区段表中，每0x28个字节保存一个区段的信息<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181637451.png" class title="image-20220327181637451"></p>
-<p>查看区段的一些信息</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323100649979.png" class title="image-20220323100649979">
-
-<p>一些基本特征</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101502214.png" class title="image-20220323101502214">
-
-
-
-<p>根据区段的基本特征打印相关属性（复习的时候发现这里打错了，VSize对应字段和RSize对应字段写反了，下图为重新更正的正确值）</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327161617678.png" class title="image-20220327161617678">
-
-<p>成功打印出了区段的属性</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327175531064.png" class title="image-20220327175531064">
-
-<p>与LordPE进行对比是没有错误的，这就是一次对区段表的遍历</p>
-<p>参考：<a href="https://blog.csdn.net/qq_30145355/article/details/78859214">https://blog.csdn.net/qq_30145355/article/details/78859214</a></p>
-]]></content>
-      <categories>
-        <category>逆向</category>
-      </categories>
-      <tags>
-        <tag>PE</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>PE中的DOS头解析</title>
-    <url>/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<p>从0开始学习PE头</p>
-<h1 id="什么是PE文件？"><a href="#什么是PE文件？" class="headerlink" title="什么是PE文件？"></a>什么是PE文件？</h1><p>PE文件的全称是Portable Executable，意为可移植的可执行的文件，常见的EXE、DLL、OCX、SYS、COM都是PE文件，PE文件是微软windows上的程序文件（可能是间接被执行，如DLL）。PE文件有一个共同特点：前两个字节为4D 5A（MZ）。如果一个文件前两个字节不是4D 5A则其肯定不是可执行文件。Linux上的是elf文件结构。</p>
-<p>一个概括图</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321195237716.png" class title="image-20220321195237716">
-
-<h1 id="MS-DOS头结构的学习，共40h（64字节）"><a href="#MS-DOS头结构的学习，共40h（64字节）" class="headerlink" title="MS-DOS头结构的学习，共40h（64字节）"></a>MS-DOS头结构的学习，共40h（64字节）</h1><p>用的是010editor进行学习</p>
-<p>这里就是一个MS-DOS头</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321203516959.png" class title="image-20220321203516959">
-
-<p>主要是为了防止PE文件运行在MS-DOS系统的时候出现一些错误，就是出于兼容性的目的。每个PE文件是以一个DOS程序开始的，有了它，一旦程序在DOS下执行，DOS才能识别出这是有效的执行体。</p>
-<p>后面的一串字符叫MS-Sub，有了这两部分，程序一旦在DOS系统下运行，就会出现一个错误提醒：this program cannot be run in MS-DOS mode。这些是垃圾值，以及编译器填充的垃圾字符。</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321204220683.png" class title="image-20220321204220683">
-
-
-
-<p>在vs中查看DOS的结构体，_IMAGE_DOS_HEADER，F12可以查看里面调用的接口函数</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321225113289.png" class title="image-20220321225113289">
-
-
-
-<p>MS-DOS头的结构</p>
-<p>e_magic决定是不是MS-DOS的一个标志，用来判断文件是不是可执行文件，e_lfanew指向新的PE头的字段（这两个最重要）</p>
-<p>其余函数的含义如下</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220321231147151.png" class title="image-20220321231147151">
-
-
-
-<p>用结构体对象的指针指向_IMAGE_DOS_HEADER</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084412293.png" class title="image-20220322084412293">
-
-
-
-<p>在标志位设置断点，调试后可以发现，在此处会进行填充，ReadDosHeader和buffer都是指针，要进行强制转换</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084439095.png" class title="image-20220322084439095">
-
-
-
-<p>F10调试一下过后发现DOS头已经被填满了（用16进制来显示）</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084544149.png" class title="image-20220322084544149">
-
-
-
-<p>可以打印出一些属性看看</p>
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322084827815.png" class title="image-20220322084827815">
-
-<img data-src="/2022/03/21/PE%E4%B8%AD%E7%9A%84DOS%E5%A4%B4%E8%A7%A3%E6%9E%90/image-20220322085328264.png" class title="image-20220322085328264">
-
 ]]></content>
       <categories>
         <category>逆向</category>
@@ -474,45 +409,62 @@
       </tags>
   </entry>
   <entry>
-    <title>导出表结构解析</title>
-    <url>/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><p>正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png" class title="image-20220326140512674">
+    <title>区段表解析及遍历</title>
+    <url>/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/</url>
+    <content><![CDATA[<h1 id="区段表结构解析"><a href="#区段表结构解析" class="headerlink" title="区段表结构解析"></a>区段表结构解析</h1><h2 id="区段名及其含义"><a href="#区段名及其含义" class="headerlink" title="区段名及其含义"></a>区段名及其含义</h2><p>使用lordPE查看区段表</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327174738493.png" class title="image-20220327174738493">
+
+<p>常用的一些区段</p>
+<p>.text：表示代码段，里面的数据都是代码（有些编译器是code段）</p>
+<p>.data：可读写的数据段，放的是全局变量和局部变量</p>
+<p>.rdata：表示只读数据段，但程序中很少用到该块中的数据</p>
+<p>.idata：放入导入表的信息</p>
+<p>.edata：放入导出表的信息</p>
+<p>.rsrc：表示资源段，如图标，菜单，位图等，这个区块是只读的</p>
+<p>.bss：表示位初始化的数据，很少在用，取而代之的是执行文件的.data区块的的VirtualSize被扩展大的空间里用来装未初始化的数据</p>
+<p>.crt：表示C++ 运行时(CRT)所添加的数据</p>
+<p>.tls：表示线程局部存储器包括数据的初始化值，也包括运行时所需要的额外变量</p>
+<p>.reloc：可执行文件的基址重定位，基址重定位一般仅Dll需要的</p>
+<p>.sdata：相对于全局指针的可被定位的短的读写数据</p>
+<p>.pdata：异常表,包含CPU特定的IAMGE_RUNTIME_FUNTION_ENTRY结构数组，DataDirectory中的IMAGE_DIRECTORY_ENTRY_EXCEPTION指向它</p>
+<p>.didat：延迟装入输入数据，在非Release模式下可以找到</p>
+<p>从区段表可以看出.text段的RVA为1000，大小为A966，也就是说.text区段在内存中的位置是从1000~B966。其他区段也是一样的</p>
+<p>所以因此可以画出程序加载到内存后的分布，以及文件在硬盘的分布</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327180422539.png" class title="image-20220327180422539">
+
+<p>程序加载到内存之后，都会分配4GB的内存地址空间（注：并不是内存大小）。在区段与区段之间并不是紧挨着的，因为内存会进行0x1000的内存对齐，空出来的空间进行填充0字节的数据。例如B966~C000的空间都是填充的0字节数据。<strong>010editor中区段与区段之间，会存在填充0的部分，这也是为了实现文件对齐。</strong></p>
+<p><strong>如何识别一个区段为代码段还是其他区段?（名字为.text并不一定就是代码块，.text可以改成任意名称，比如.asd）</strong></p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181036922.png" class title="image-20220327181036922">
+
+<p>RVA&#x3D;1000的是代码块</p>
+<p>最主要的还是查看特征值的属性，每个区段的属性都不一样</p>
+<p>这是.text的属性</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181302574.png" class title="image-20220327181302574">
+
+<p>这是.rdata的属性</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181402627.png" class title="image-20220327181402627">
 
 
 
-<p>导出表的基本结构，进入导出表</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png" class title="image-20220326140711566">
-
-<p>相关的参数如图中的注释</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png" class title="image-20220326141430682">
 
 
+<h2 id="每个区段的基本信息"><a href="#每个区段的基本信息" class="headerlink" title="每个区段的基本信息"></a>每个区段的基本信息</h2><p>区段表中，每0x28个字节保存一个区段的信息<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181637451.png" class title="image-20220327181637451"></p>
+<p>查看区段的一些信息</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323100649979.png" class title="image-20220323100649979">
 
-<p>写函数解析导出表上半部分的结构</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png" class title="image-20220326144108918">
-
-<p>在LordPE中这就是红线框起来的部分</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144155090.png" class title="image-20220326144155090">
-
-<p>还需要把下面的函数名以及RVA等打印出来</p>
-<p>后面三个属性需要是RVA需要转换</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326150854304.png" class title="image-20220326150854304">
-
-<p>执行后成功返回我们需要的信息</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png" class title="image-20220326151530348">
+<p>一些基本特征</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101502214.png" class title="image-20220323101502214">
 
 
 
-<p>重点理解一下最后三个RVA（AddressOfFunctions，AddressOfNames，AddressOfNameOrdinals）</p>
-<p>AddressOfFunctions：一个RVA，指向一个DWORD数组，数组中的每一项是一个导出函数的RVA，顺序与导出序号相同。</p>
-<p>AddressOfNames：一个RVA，依然指向一个DWORD数组，数组中的每一项仍然是一个RVA，指向一个表示函数名字。</p>
-<p>AddressOfNameOrdinals：一个RVA，还是指向一个WORD数组，数组中的每一项与AddressOfNames中的每一项对应，表示该名字的函数在AddressOfFunctions中的序号。</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png" class title="image-20220326153512424">
+<p>根据区段的基本特征打印相关属性（复习的时候发现这里打错了，VSize对应字段和RSize对应字段写反了，下图为重新更正的正确值）</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327161617678.png" class title="image-20220327161617678">
 
+<p>成功打印出了区段的属性</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327175531064.png" class title="image-20220327175531064">
 
-
-<p>参考：<a href="https://blog.csdn.net/evileagle/article/details/12176797">https://blog.csdn.net/evileagle/article/details/12176797</a></p>
+<p>与LordPE进行对比是没有错误的，这就是一次对区段表的遍历</p>
+<p>参考：<a href="https://blog.csdn.net/qq_30145355/article/details/78859214">https://blog.csdn.net/qq_30145355/article/details/78859214</a></p>
 ]]></content>
       <categories>
         <category>逆向</category>
@@ -766,24 +718,43 @@
   <entry>
     <title>导入表结构解析</title>
     <url>/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="导入表解析"><a href="#导入表解析" class="headerlink" title="导入表解析"></a>导入表解析</h1><p>导入表就是记录PE程序从外部导入动态链接库的东西。他只起一个引导的作用。</p>
-<p>使用LordPE先查看导入表的一些基本信息，可以看到每一个动态链接库都调用了很多api</p>
+    <content><![CDATA[<h1 id="导入表解析"><a href="#导入表解析" class="headerlink" title="导入表解析"></a>导入表解析</h1><p>导入表是记录PE文件中用到的动态连接库的集合，一个dll库在导入表中占用一个元素信息的位置。而dll作为一个元素有很多信息如时间、序号、加载后的函数地址等。这些信息存在IMAGE_IMPORT_DESCRIPTOR结构体中，一个dll就是一个这样的结构体。导入表就是这些dll的集合，有点像元素（每个dll）与数组（导入表）的关系。</p>
+<p>使用LordPE先查看导入表的一些基本信息，可以看到每一个动态链接库都调用了很多api。</p>
 <img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png" class title="image-20220325162801268">
 
 
 
-<p>查看三个与导入表相关的结构（解析主要在图片里面的注释）</p>
+<p>查看三个与导入表相关的结构（图片里面的注释时该字段的说明）</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IMAGE_IMPORT_DESCRIPTOR</span><br><span class="line">IMAGE_THUNK_DATA</span><br><span class="line">IMAGE_IMPORT_BY_NAME</span><br></pre></td></tr></table></figure>
 
-
+<p>三个结构体调用的先后关系</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327225843055.png" class title="image-20220327225843055">
 
 <img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325163835784.png" class title="image-20220325163835784">
 
+
+
+<h2 id="1、IMAGE-IMPORT-DESCRIPTOR解析"><a href="#1、IMAGE-IMPORT-DESCRIPTOR解析" class="headerlink" title="1、IMAGE_IMPORT_DESCRIPTOR解析"></a>1、IMAGE_IMPORT_DESCRIPTOR解析</h2><p>a、如果Characteristics的值为0，说明这是导入表结构体数组的最后一个元素，也就是导入表这个数组存放的最后一个dll。如果Characteristics的值不为0，用OriginalFirstThunk（RVA）来索引INT的地址。这张INT表存放了该dll的导出函数信息（序号与函数名）。</p>
+<p>b、当TimeDateStamp&#x3D;0时，表示未加载前IAT表与INT表完全相同；当TimeDateStamp&#x3D;-1时，表示IAT表与INT表不同，IAT表存该dll所有函数的绝对地址，当TimeDateStamp&#x3D;-1时绑定导入表才有效。</p>
+<p>c、name字段时RVA指向dll的名字</p>
+<p>d、FirstThunk，RVA指向IAT表</p>
 <img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325170815048.png" class title="image-20220325170815048">
 
+<h2 id="2、IAT（Import-Address-Table）和INT（Import-Name-Table）结构解析"><a href="#2、IAT（Import-Address-Table）和INT（Import-Name-Table）结构解析" class="headerlink" title="2、IAT（Import Address Table）和INT（Import Name Table）结构解析"></a>2、IAT（Import Address Table）和INT（Import Name Table）结构解析</h2><p>当加载到内存前IAT和INT结构是相同的，都指向一个结构体，也就是IMAGE_IMPORT_BY_NAME，存储着需要导入的函数的序号和名称。IAT和INT的元素为IMAGE_THUNK_DATA，它的最后一个字段由四字节的AddressOfData指向IMAGE_IMPORT_BY_NAME结构体。这就是加载到内存前，IAT和INT的结构，其实是一样的。</p>
+<p>当加载到内存后，INT依旧保存dll的函数名与函数序号的地址。但是此时IAT则根据导入表的INT（IAT加载前）的内容和导出表信息，修改为对应的函数的地址信息。如下图</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328085822090.png" class title="image-20220328085822090">
 
+<h2 id="3、绑定导入表与IAT"><a href="#3、绑定导入表与IAT" class="headerlink" title="3、绑定导入表与IAT"></a>3、绑定导入表与IAT</h2><p>上面的情况都是IAT存储着非函数地址的情况，但是有些时候加载前IAT表是要存储函数地址的。IAT存储的函数地址是dll未加载的地址。当PE文件中不存在绑定导入表时，IAT就和INT一样，此时导入表中的时间戳为0。当导入表的时间戳为-1时，IAT表就存储该dll的所有函数的绝对地址，dll的真正时间戳会存放于绑定导入表中（绑定导入表地址存放在数据目录的第12项，IAT是第13项）。</p>
+<p>PE中包含导入表的优点是程序启动快，但是其缺点也十分明显，当存在dll地址重定位和dll修改更新，则绑定导入表也需要修改更新。</p>
+<p>查看与绑定导入表相关的两个结构体</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328091610745.png" class title="image-20220328091610745">
 
-<p>结构理清楚过后就写代码来解析</p>
+<p>PS：这两个结构体中所有的OffsetModuleName均不是相对于ImageBase的RVA也不是FOA，而是相对于绑定导入表首地址的偏移地址，即：<strong>绑定导入表首地址 + OffsetModuleName&#x3D; RVA</strong>。</p>
+<p>图解如下</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328091717637.png" class title="image-20220328091717637">
+
+<p>引用了csdn的Apollon_krj师傅的结构解析图。</p>
+<h1 id="代码解析"><a href="#代码解析" class="headerlink" title="代码解析"></a>代码解析</h1><p>结构理清楚过后就写代码来解析</p>
 <img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180456376.png" class title="image-20220325180456376">
 
 <p>这里还要在主函数之中调用一下</p>
@@ -808,6 +779,62 @@
 
 <p>可以看到是成功解析了的，并且顺序也没有问题，这就是一个基本的导入表的分析</p>
 <p>总结：导入表的大小主要取决于写代码的时候导入了多少动态链接库，就会在导入表这里显示导入了多少动态链接库，导入了多少函数。如果正常程序调用了太多dll可能会引起误报，所以做免杀的时候可以将导入表不显示。例如可以写壳等方式。</p>
+<p>参考：<a href="https://blog.csdn.net/Apollon_krj/article/details/77417063?spm=1001.2101.3001.6650.1&amp;utm_medium=distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_paycolumn_v3&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_paycolumn_v3&amp;utm_relevant_index=2">https://blog.csdn.net/Apollon_krj/article/details/77417063?spm=1001.2101.3001.6650.1&amp;utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_paycolumn_v3&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_paycolumn_v3&amp;utm_relevant_index=2</a></p>
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>导出表结构解析</title>
+    <url>/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><h2 id="什么是导出表"><a href="#什么是导出表" class="headerlink" title="什么是导出表"></a>什么是导出表</h2><p>一个程序引用哪些模块是由导入表决定的，与导入表对应的就是导出表，导出表则是决定当前的PE文件能够给其它PE文件提供的函数。正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p>
+<p>使用010Editor查看导出表</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png" class title="image-20220326140512674">
+
+<p>在PE的NT头下的扩展头下的DataDirArray[0]表达的是导出表的位置和大小</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094315573.png" class title="image-20220328094315573">
+
+<p>可以看到VitualAddress和Size都是DWORD类型，但是这里知识导出表的起始地址(RVA)，在010editor直接Ctrl+G搜索，F1950</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094840802.png" class title="image-20220328094840802">
+
+
+
+<h2 id="代码解析导出表"><a href="#代码解析导出表" class="headerlink" title="代码解析导出表"></a>代码解析导出表</h2><p>导出表的基本结构，进入导出表</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png" class title="image-20220326140711566">
+
+<p>相关的参数如图中的注释</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png" class title="image-20220326141430682">
+
+
+
+<p>写函数解析导出表上半部分的结构</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png" class title="image-20220326144108918">
+
+<p>在LordPE中这就是红线框起来的部分</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144155090.png" class title="image-20220326144155090">
+
+<p>还需要把下面的函数名以及RVA等打印出来</p>
+<p>后面三个属性需要是RVA需要转换</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326150854304.png" class title="image-20220326150854304">
+
+<p>执行后成功返回我们需要的信息</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png" class title="image-20220326151530348">
+
+
+
+<p>重点理解一下最后三个RVA（AddressOfFunctions，AddressOfNames，AddressOfNameOrdinals）</p>
+<p>AddressOfFunctions：一个RVA，指向一个DWORD数组，数组中的每一项是一个导出函数的RVA，顺序与导出序号相同。</p>
+<p>AddressOfNames：一个RVA，依然指向一个DWORD数组，数组中的每一项仍然是一个RVA，指向一个表示函数名字。</p>
+<p>AddressOfNameOrdinals：一个RVA，还是指向一个WORD数组，数组中的每一项与AddressOfNames中的每一项对应，表示该名字的函数在AddressOfFunctions中的序号。</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png" class title="image-20220326153512424">
+
+
+
+<p>参考：<a href="https://blog.csdn.net/evileagle/article/details/12176797">https://blog.csdn.net/evileagle/article/details/12176797</a></p>
 ]]></content>
       <categories>
         <category>逆向</category>
@@ -1449,7 +1476,10 @@
   <entry>
     <title>重定位表结构解析</title>
     <url>/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="重定位表的作用"><a href="#重定位表的作用" class="headerlink" title="重定位表的作用"></a>重定位表的作用</h1><p>在windows系统中，动态链接库不一定每次都能加载到ImageBase上边，因此基址重定位主要是应用在动态链接库里面。比如程序的默认基址是0x400000，如果想将程序的偏移为0x100的数据压入堆栈的话，可能就需要push一个0x400100，由于exe文件能保证每一次加载的地址都是0x400000因此push指令执行起来没有问题，但是指令如果在动态链接库里情况就不一样，因为动态链接库不能保证每次都加载到预设的基址上，当动态链接库加载到其他位置上的时候，就必须用其他的位置才能访问到正确的数据。就是不能再用0x400100，因此基址重定位表就是为了避免这个错误而设计的。一般情况下，重定位表位于一个reloc的区段里，PE文件对于重定位是非常简单的。只需要将重定位的数组放入一个地址就可以了。因此，如果映像文件没有在预设的基址载入的话，加载器就会在数组里重定位的信息修改一遍。</p>
+    <content><![CDATA[<h1 id="重定位表的作用"><a href="#重定位表的作用" class="headerlink" title="重定位表的作用"></a>重定位表的作用</h1><p>重定位表用于在程序加载到内存中时，进行内存地址的修正。如果一个exe需要三个动态链接库dll（a.dll，b.dll，c.dll），假设这个exe的ImageBase为400000H，而a.dll、b.dll、c.dll的基址ImageBase均为1000000H。<br>那么操作系统的加载程序在将exe加载进内存时，直接复制其程序到400000H开始的虚拟内存中，接着一一加载a.dll、b.dll、c.dll：假设先加载a.dll，如果exe的ImageBase + SizeOfImage + 1000H不大于1000000H，则a.dll直接复制到1000000H开始的内存中；当b.dll加载时，虽然其基址也为1000000H，但是由于1000000H已经被a.dll占用，则b.dll需要重新分配基址，比如加载程序经过计算将其分配到1200000H的地址，c.dll同样经过计算将其加载到150000H的地址。如下图所示：</p>
+<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328095543424.png" class title="image-20220328095543424">
+
+<p>当加载器加载程序时，如果加载器为某PE（.exe、.dll）分配的基址与其自身默认记录的ImageBase不相同，那么该程序文件加载完毕后就需要修正重定位表中的所有需要修正的地址。如果加载器分配的基址和该程序文件中记录默认的ImageBase相同，则不需要修正，重定位表对于该dll也是没有效用的。</p>
 <h1 id="查看基本的结构"><a href="#查看基本的结构" class="headerlink" title="查看基本的结构"></a>查看基本的结构</h1><p>重定位的结构在IMAGE_BASE_RELOCATION当中</p>
 <img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327105514756.png" class title="image-20220327105514756">
 
