@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.0.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" integrity="sha256-jTIdiMuX/e3DGJUGwl3pKSxuc6YOuqtJYkM0bGQESA4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"linus1124-root.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.10.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":-1,"unescape":true,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="PE文件结构入门到入坟">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TLS表结构解析">
+<meta property="og:url" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="Linus1124">
+<meta property="og:description" content="PE文件结构入门到入坟">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329090230771.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329095153203.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329095540835.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329100957663.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329091901236.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329093208621.png">
+<meta property="og:image" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329093555282.png">
+<meta property="article:published_time" content="2022-03-29T00:53:42.000Z">
+<meta property="article:modified_time" content="2022-03-29T02:10:09.193Z">
+<meta property="article:author" content="chen">
+<meta property="article:tag" content="PE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329090230771.png">
+
+
+<link rel="canonical" href="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/","path":"2022/03/29/TLS表结构解析/","title":"TLS表结构解析"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>TLS表结构解析 | Linus1124</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Linus1124" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Linus1124</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Every little helps</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">3</span></a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">15</span></a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">TLS表结构解析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS%E8%A1%A8%E7%AE%80%E4%BB%8B%E5%8F%8A%E5%85%B6%E4%BD%9C%E7%94%A8"><span class="nav-number">1.0.0.1.</span> <span class="nav-text">TLS表简介及其作用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS%E8%A1%A8%E5%85%B3%E9%94%AE%E5%AD%97%E6%AE%B5"><span class="nav-number">1.0.0.2.</span> <span class="nav-text">TLS表关键字段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E8%A7%A3%E6%9E%90TLS%E8%A1%A8"><span class="nav-number">1.0.0.3.</span> <span class="nav-text">函数解析TLS表</span></a></li></ol></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="chen"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">chen</p>
+  <div class="site-description" itemprop="description">安全菜鸟的博客</div>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Linus1124-root" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Linus1124-root" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:656113372@qq.com" title="E-Mail → mailto:656113372@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="chen">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Linus1124">
+      <meta itemprop="description" content="安全菜鸟的博客">
+    </span>
+    
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="TLS表结构解析 | Linus1124">
+      <meta itemprop="description" content="PE文件结构入门到入坟">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          TLS表结构解析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-03-29 08:53:42 / 修改时间：10:10:09" itemprop="dateCreated datePublished" datetime="2022-03-29T08:53:42+08:00">2022-03-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E9%80%86%E5%90%91/" itemprop="url" rel="index"><span itemprop="name">逆向</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>394</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">PE文件结构入门到入坟</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="TLS表结构解析"><a href="#TLS表结构解析" class="headerlink" title="TLS表结构解析"></a>TLS表结构解析</h1><h4 id="TLS表简介及其作用"><a href="#TLS表简介及其作用" class="headerlink" title="TLS表简介及其作用"></a><strong>TLS表简介及其作用</strong></h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329090230771.png" class title="image-20220329090230771">
+
+<p><strong>简介</strong>：TLS表称为线程局部存储，实现了线程内局部变量的存储访问。该技术下定义的变量能被同一个线程内部的各个函数调用，同时杜绝了其他线程对这些变量的访问。一般是会优先于程序运行的，就是会在main函数之前就运行。</p>
+<p><strong>作用</strong>：TLS解决了多线程程序设计中同步变量问题。</p>
+<p>TLS变量的创建方法有两种方式，分别是动态方式和静态方式，动态方法会用到TlsAlloc、TlsFree、TlsSetValue、TlsGetValue这几个函数来操作变量，静态方法会用声明__declspec (thread) int xx &#x3D; 1;这样的方式来创建。需要注意的是静态创建的TLS变量不能用于DLL动态库中。<br>动态TLS具体过程如下图所示</p>
+<img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329095153203.png" class title="image-20220329095153203">
+
+<p>在010Editor中查看</p>
+<p>这是指向TLS表的RVA</p>
+<img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329095540835.png" class title="image-20220329095540835">
+
+<p>通过FOA定位到了TLS的位置</p>
+<img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329100957663.png" class title="image-20220329100957663">
+
+<h4 id="TLS表关键字段"><a href="#TLS表关键字段" class="headerlink" title="TLS表关键字段"></a>TLS表关键字段</h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329091901236.png" class title="image-20220329091901236">
+
+
+
+<h4 id="函数解析TLS表"><a href="#函数解析TLS表" class="headerlink" title="函数解析TLS表"></a>函数解析TLS表</h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329093208621.png" class title="image-20220329093208621">
+
+<p>与LordPE中的值是一样的</p>
+<img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329093555282.png" class title="image-20220329093555282">
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>chen
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/" title="TLS表结构解析">https://linus1124-root.github.io/2022/03/29/TLS表结构解析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/PE/" rel="tag"># PE</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/" rel="prev" title="重定位表结构解析">
+                  <i class="fa fa-chevron-left"></i> 重定位表结构解析
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/" rel="next" title="延迟导入表结构解析">
+                  延迟导入表结构解析 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">chen</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js" integrity="sha256-j+yj56cdEY2CwkVtGyz18fNybFGpMGJ8JxG3GSyO2+I=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+</body>
+</html>

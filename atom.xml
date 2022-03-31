@@ -6,7 +6,7 @@
   <link href="https://linus1124-root.github.io/atom.xml" rel="self"/>
   
   <link href="https://linus1124-root.github.io/"/>
-  <updated>2022-03-28T01:59:40.750Z</updated>
+  <updated>2022-03-31T08:06:40.866Z</updated>
   <id>https://linus1124-root.github.io/</id>
   
   <author>
@@ -15,6 +15,69 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>资源表结构解析</title>
+    <link href="https://linus1124-root.github.io/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/"/>
+    <id>https://linus1124-root.github.io/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</id>
+    <published>2022-03-31T00:52:44.000Z</published>
+    <updated>2022-03-31T08:06:40.866Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="资源表和其他数据表展示"><a href="#资源表和其他数据表展示" class="headerlink" title="资源表和其他数据表展示"></a>资源表和其他数据表展示</h1><p>windows的可执行程序将程序的各种界面定义为资源，比如光标，对话框，图标，菜单，串表，工具栏，版本信息等等</p><p>还是先用LordPE看看资源表有哪些具体东西</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331092307699.png" class title="image-20220331092307699"><p>从图中大概可以看到，一个程序有很多资源，这些资源项用不同的ID或者名称来区分。但是要将这么多种类型的不同ID的资源有序的组织起来是很繁琐的事情，因此在PE中我们采取类似于磁盘目录结构的方式保存。在PE文件中的资源是按照 资源类型 -&gt; 资源ID -&gt; 资源代码页的3层树型目录结构来组织资源的，通过层层索引才能够进入相应的子目录找到正确的资源。</p><h1 id="资源目录结构"><a href="#资源目录结构" class="headerlink" title="资源目录结构"></a>资源目录结构</h1><p>数据目录表中的 IMAGE_DIRECTORY_ENTRY_RESOURCE 条目包含资源的 RVA 和大小。</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331092816243.png" class title="image-20220331092816243"><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331093045452.png" class title="image-20220331093045452"><p>资源目录结构中的每一个节点都是由 IMAGE_RESOURCE_DIRECTORY 结构和紧跟其后的数个IMAGE_RESOURCE_DIRECTORY_ENTRY 结构组成的。知道了这样的嵌套关系过后，我们先来看一看 IMAGE_RESOURCE_DIRECTORY 这个结构。里边有用的只有后两项表示在这个 IMAGE_RESOURCE_DIRCTORY ，后边紧跟的 IMAGE_RESOURCE_DIR_ENTRY 数量</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331093827786.png" class title="image-20220331093827786"><p>那什么是字符串什么是数字呢</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331093935784.png" class title="image-20220331093935784"><p>图中箭头指向的就是字符串，这些字符串有多少个NumberOfNamedEntries的值就为多少，比如这里就是4（Icon，Menu，Group Icon，Version Information）。而数字作为标识的有多少个NumberOfIdEntries的值就为多少，比如这里就是1（24）。</p><p>现在来看下一个结构_IMAGE_RESOURCE_DIRECTORY_ENTRY，IMAGE_RESOURCE_DIRECTORY_ENTRY 紧跟在资源目录结构后。</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331094939229.png" class title="image-20220331094939229"><p>当NameISString是1的时候nameoffset就起作用了，这时候指向的是这个IMAGE_RESOURCE_DIR_STRING_U结构</p><p>看看这个IMAGE_RESOURCE_DIR_STRING_U结构</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331095238549.png" class title="image-20220331095238549"><p>还有最后一个结构_IMAGE_RESOURCE_DATA_ENTRY，这个结构体是用来表示资源数据的信息，前两个有用其他的没有用。</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331100533366.png" class title="image-20220331100533366"><h1 id="代码解析资源表"><a href="#代码解析资源表" class="headerlink" title="代码解析资源表"></a>代码解析资源表</h1><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331145747992.png" class title="image-20220331145747992"><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331145801895.png" class title="image-20220331145801895"><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331145819925.png" class title="image-20220331145819925"><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331145836585.png" class title="image-20220331145836585"><p>这是显示结果</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331160506934.png" class title="image-20220331160506934"><h1 id="其他的数据表"><a href="#其他的数据表" class="headerlink" title="其他的数据表"></a>其他的数据表</h1><p>还有一些表是没什么意义的，但是可以打印RVA和长度</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331154858673.png" class title="image-20220331154858673"><p>数据目录表中有哪一个没解析的，就用哪个就可以了，比如打印DEBUG表</p><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331155424798.png" class title="image-20220331155424798"><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331155749802.png" class title="image-20220331155749802">]]></content>
+    
+    
+    <summary type="html">PE文件入门到入坟</summary>
+    
+    
+    
+    <category term="逆向" scheme="https://linus1124-root.github.io/categories/%E9%80%86%E5%90%91/"/>
+    
+    
+    <category term="PE" scheme="https://linus1124-root.github.io/tags/PE/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>延迟导入表结构解析</title>
+    <link href="https://linus1124-root.github.io/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/"/>
+    <id>https://linus1124-root.github.io/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</id>
+    <published>2022-03-29T02:14:05.000Z</published>
+    <updated>2022-03-29T02:53:44.399Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="延迟导入表结构解析"><a href="#延迟导入表结构解析" class="headerlink" title="延迟导入表结构解析"></a>延迟导入表结构解析</h1><p>主要就是为了加快PE文件的加载速度，而且延迟导入一次只会导入一个函数，而不是一次导入整个模块的所有函数。延迟导入的加载只发生在函数第一次被调用的时候，之后IAT就填充为正确函数地址。</p><p>VS2019也有自带的模块可以延迟导入DLL</p><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329102601307.png" class title="image-20220329102601307"><p>在这一项后面填写需要延迟导入的DLL名称，连接器就会自动帮我们将这些DLL的导入变为延迟导入。</p><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329102717970.png" class title="image-20220329102717970"><p>延迟导入表的流程</p><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329105003536.png" class title="image-20220329105003536"><h4 id="查看延迟导入表的字段"><a href="#查看延迟导入表的字段" class="headerlink" title="查看延迟导入表的字段"></a>查看延迟导入表的字段</h4><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329103235901.png" class title="image-20220329103235901"><h4 id="使用函数解析"><a href="#使用函数解析" class="headerlink" title="使用函数解析"></a>使用函数解析</h4><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329104417919.png" class title="image-20220329104417919"><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329105255400.png" class title="image-20220329105255400"><p>与LordPE进行对比发现是一样的</p><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329105343148.png" class title="image-20220329105343148">]]></content>
+    
+    
+    <summary type="html">PE文件结构入门到入坟</summary>
+    
+    
+    
+    <category term="逆向" scheme="https://linus1124-root.github.io/categories/%E9%80%86%E5%90%91/"/>
+    
+    
+    <category term="PE" scheme="https://linus1124-root.github.io/tags/PE/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>TLS表结构解析</title>
+    <link href="https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/"/>
+    <id>https://linus1124-root.github.io/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</id>
+    <published>2022-03-29T00:53:42.000Z</published>
+    <updated>2022-03-29T02:10:09.193Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="TLS表结构解析"><a href="#TLS表结构解析" class="headerlink" title="TLS表结构解析"></a>TLS表结构解析</h1><h4 id="TLS表简介及其作用"><a href="#TLS表简介及其作用" class="headerlink" title="TLS表简介及其作用"></a><strong>TLS表简介及其作用</strong></h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329090230771.png" class title="image-20220329090230771"><p><strong>简介</strong>：TLS表称为线程局部存储，实现了线程内局部变量的存储访问。该技术下定义的变量能被同一个线程内部的各个函数调用，同时杜绝了其他线程对这些变量的访问。一般是会优先于程序运行的，就是会在main函数之前就运行。</p><p><strong>作用</strong>：TLS解决了多线程程序设计中同步变量问题。</p><p>TLS变量的创建方法有两种方式，分别是动态方式和静态方式，动态方法会用到TlsAlloc、TlsFree、TlsSetValue、TlsGetValue这几个函数来操作变量，静态方法会用声明__declspec (thread) int xx &#x3D; 1;这样的方式来创建。需要注意的是静态创建的TLS变量不能用于DLL动态库中。<br>动态TLS具体过程如下图所示</p><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329095153203.png" class title="image-20220329095153203"><p>在010Editor中查看</p><p>这是指向TLS表的RVA</p><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329095540835.png" class title="image-20220329095540835"><p>通过FOA定位到了TLS的位置</p><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329100957663.png" class title="image-20220329100957663"><h4 id="TLS表关键字段"><a href="#TLS表关键字段" class="headerlink" title="TLS表关键字段"></a>TLS表关键字段</h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329091901236.png" class title="image-20220329091901236"><h4 id="函数解析TLS表"><a href="#函数解析TLS表" class="headerlink" title="函数解析TLS表"></a>函数解析TLS表</h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329093208621.png" class title="image-20220329093208621"><p>与LordPE中的值是一样的</p><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329093555282.png" class title="image-20220329093555282">]]></content>
+    
+    
+    <summary type="html">PE文件结构入门到入坟</summary>
+    
+    
+    
+    <category term="逆向" scheme="https://linus1124-root.github.io/categories/%E9%80%86%E5%90%91/"/>
+    
+    
+    <category term="PE" scheme="https://linus1124-root.github.io/tags/PE/"/>
+    
+  </entry>
   
   <entry>
     <title>重定位表结构解析</title>

